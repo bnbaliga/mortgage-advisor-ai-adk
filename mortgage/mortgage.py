@@ -592,6 +592,9 @@ class MortgageStore:
 
     def compare_options(self, property_value: float, current_balance: float,
                         credit_score: int, state: str,
+                        property_use: str = "primary",
+                        has_existing_cashout: bool = False,
+                        last_cashout_date: str = "",
                         cash_needed: float = 0) -> dict:
         """Compare eligible mortgage options for a property.
 
@@ -600,67 +603,121 @@ class MortgageStore:
             current_balance: Current mortgage balance in dollars.
             credit_score: Borrower's credit score.
             state: State where property is located.
+            property_use: How the property is used (primary, investment, second_home, or caller's own words).
+            has_existing_cashout: Whether there's an existing cash-out mortgage on the property.
+            last_cashout_date: ISO date of last cash-out (optional, for once-per-year rules).
             cash_needed: Amount of cash the borrower wants to access (for HELOC/cash-out).
 
         Returns:
-            Dict with eligible options, each including rate, monthly payment, and potential savings.
+            Dict with eligible options, excluded options with reasons, and potential needs_review status.
         """
         # Normalize state - raises if unknown
         state_code = normalize_state(state)
 
-        # Check HELOC eligibility for this state
+        # Normalize property use - raises if unknown
+        normalized_property_use = normalize_property_use(property_use)
+
+        # Get state rules
         state_rules = self.state_regulations.get(state_code, {})
-        heloc_rules = state_rules.get("heloc_rules") if state_rules else None
+        cashout_rules = state_rules.get("cashout_rules") if state_rules else None
 
         equity = property_value - current_balance
         current_ltv = (current_balance / property_value * 100) if property_value > 0 else 100
 
         options = []
-        errors = []
+        excluded = []
+        needs_review = False
+        needs_review_reasons = []
 
-        # --- HELOC Option ---
-        heloc_eligible = True
-        heloc_issues = []
+        # --- HELOC Eligibility (use check_heloc_eligibility) ---
+        heloc_check = self.check_heloc_eligibility(
+            state=state_code,
+            property_type=normalized_property_use,
+            has_existing_cashout=has_existing_cashout,
+            property_value=property_value,
+            current_balance=current_balance
+        )
 
-        if heloc_rules:
-            max_cltv = heloc_rules.get("max_cltv", 80)
-            if current_ltv >= max_cltv:
-                heloc_eligible = False
-                heloc_issues.append(f"Current LTV {current_ltv:.1f}% exceeds max {max_cltv}%")
-            else:
-                max_heloc = (property_value * max_cltv / 100) - current_balance
-                if cash_needed > max_heloc:
-                    heloc_eligible = False
-                    heloc_issues.append(f"Cash needed ${cash_needed:,.0f} exceeds max HELOC ${max_heloc:,.0f}")
+        # Handle HELOC based on eligibility result
+        if heloc_check.get("eligible") is None:
+            # Needs review - cannot determine eligibility
+            needs_review = True
+            needs_review_reasons.append("HELOC eligibility requires loan officer review")
+            excluded.append({
+                "product": "heloc",
+                "reason": "State regulations not on file; requires loan officer review"
+            })
+        elif heloc_check.get("eligible") is False:
+            # Not eligible - add to excluded with reasons
+            issues = heloc_check.get("issues", [])
+            excluded.append({
+                "product": "heloc",
+                "reason": "; ".join(issues) if issues else "Not eligible based on state rules"
+            })
         else:
-            # No rules on file - cannot confirm eligibility
-            heloc_eligible = False
-            heloc_issues.append("State regulations not on file")
-
-        if heloc_eligible:
-            heloc_amount = cash_needed if cash_needed > 0 else min(50000, equity * 0.5)
-            heloc_ltv = ((current_balance + heloc_amount) / property_value) * 100
-            rate_info = self.get_rate_from_sheet("heloc", credit_score, heloc_ltv)
-            if rate_info and rate_info["rate"]:
-                # HELOC is interest-only during draw period
-                monthly_interest = round(heloc_amount * rate_info["rate"] / 100 / 12, 2)
-                options.append({
+            # Eligible - check if cash needed exceeds max
+            max_heloc = heloc_check.get("max_heloc_amount", 0)
+            if cash_needed > 0 and max_heloc > 0 and cash_needed > max_heloc:
+                excluded.append({
                     "product": "heloc",
-                    "name": rate_info["product_name"],
-                    "rate": rate_info["rate"],
-                    "amount": round(heloc_amount, 0),
-                    "monthly_payment": monthly_interest,
-                    "payment_type": "interest_only_draw",
-                    "note": "Payment shown is interest-only during 10-year draw period",
-                    "credit_tier": rate_info["credit_tier"],
-                    "benchmark": rate_info.get("benchmark", {}).get("rate")
+                    "reason": f"Cash needed ${cash_needed:,.0f} exceeds max HELOC ${max_heloc:,.0f}"
                 })
+            else:
+                # Add HELOC option
+                heloc_amount = cash_needed if cash_needed > 0 else min(50000, equity * 0.5)
+                if heloc_amount > 0:
+                    heloc_ltv = ((current_balance + heloc_amount) / property_value) * 100
+                    rate_info = self.get_rate_from_sheet("heloc", credit_score, heloc_ltv)
+                    if rate_info and rate_info["rate"]:
+                        monthly_interest = round(heloc_amount * rate_info["rate"] / 100 / 12, 2)
+                        options.append({
+                            "product": "heloc",
+                            "name": rate_info["product_name"],
+                            "rate": rate_info["rate"],
+                            "amount": round(heloc_amount, 0),
+                            "monthly_payment": monthly_interest,
+                            "payment_type": "interest_only_draw",
+                            "note": "Payment shown is interest-only during 10-year draw period",
+                            "credit_tier": rate_info["credit_tier"],
+                            "benchmark": rate_info.get("benchmark", {}).get("rate")
+                        })
 
         # --- Cash-Out Refinance Option ---
+        cashout_eligible = True
+        cashout_exclusion_reason = None
+
+        # Get max LTV from state rules (not hard-coded 80)
+        cashout_max_ltv = 80  # Default
+        if cashout_rules:
+            cashout_max_ltv = cashout_rules.get("max_ltv", 80)
+
+            # Check once-per-year rule
+            if cashout_rules.get("once_per_year", False):
+                if last_cashout_date:
+                    # Check if within 365 days
+                    try:
+                        last_date = date.fromisoformat(last_cashout_date)
+                        days_since = (self.today() - last_date).days
+                        if days_since < 365:
+                            cashout_eligible = False
+                            cashout_exclusion_reason = f"Cash-out within last 12 months ({days_since} days ago); {state_code} requires one year between cash-out refinances"
+                    except ValueError:
+                        pass  # Invalid date format, proceed without check
+                elif has_existing_cashout:
+                    # Has existing cash-out but no date - needs review
+                    cashout_eligible = False
+                    cashout_exclusion_reason = f"{state_code} requires one year between cash-out refinances; date of prior cash-out unknown - requires loan officer review"
+                    needs_review = True
+                    needs_review_reasons.append("Cash-out refinance date verification needed")
+
         cashout_amount = current_balance + (cash_needed if cash_needed > 0 else 50000)
         cashout_ltv = (cashout_amount / property_value) * 100
-        # Cash-out usually limited to 80% LTV
-        if cashout_ltv <= 80:
+
+        if cashout_ltv > cashout_max_ltv:
+            cashout_eligible = False
+            cashout_exclusion_reason = f"LTV {cashout_ltv:.1f}% exceeds {state_code} maximum {cashout_max_ltv}%"
+
+        if cashout_eligible:
             rate_info = self.get_rate_from_sheet("cash_out_refi", credit_score, cashout_ltv)
             if rate_info and rate_info["rate"]:
                 monthly = self.calculate_monthly_payment(cashout_amount, rate_info["rate"], 30)
@@ -676,6 +733,11 @@ class MortgageStore:
                     "credit_tier": rate_info["credit_tier"],
                     "benchmark": rate_info.get("benchmark", {}).get("rate")
                 })
+        elif cashout_exclusion_reason:
+            excluded.append({
+                "product": "cash_out_refi",
+                "reason": cashout_exclusion_reason
+            })
 
         # --- Rate-and-Term Refinance Option (if they just want lower rate) ---
         if current_balance > 0 and cash_needed == 0:
@@ -701,17 +763,24 @@ class MortgageStore:
                 savings_rate = opt["benchmark"] - opt["rate"]
                 opt["savings_vs_market"] = f"{savings_rate:.3f}% below market"
 
-        return {
+        result = {
             "state": state_code,
             "property_value": round(property_value, 0),
             "current_balance": round(current_balance, 0),
             "equity": round(equity, 0),
             "current_ltv": round(current_ltv, 1),
             "credit_score": credit_score,
+            "property_use": normalized_property_use,
             "options": options,
-            "heloc_issues": heloc_issues if not heloc_eligible else [],
+            "excluded": excluded,
             "disclaimer": self.info["disclaimers"]["rates"]
         }
+
+        if needs_review:
+            result["status"] = "needs_review"
+            result["needs_review_reasons"] = needs_review_reasons
+
+        return result
 
     def find_customer(self, full_name: str, phone_last_4: str = "") -> Optional[Customer]:
         """Find a customer by name and optional phone digits."""

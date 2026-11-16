@@ -206,6 +206,17 @@ async def mortgage_gate(tool: BaseTool, args: dict[str, Any], tool_context: Tool
         property_value = args.get("property_value", 0)
         credit_score = args.get("credit_score", 720)
 
+        # REQUIRED: property_use and has_existing_cashout must be explicitly provided for accurate results
+        if "property_use" not in args:
+            return _block(call_id, name, args, "missing_inputs",
+                          "compare_options requires property_use for accurate results",
+                          "Ask the caller how they use this property — is it their primary home, a rental or investment, or a vacation home?")
+
+        if "has_existing_cashout" not in args:
+            return _block(call_id, name, args, "missing_inputs",
+                          "compare_options requires has_existing_cashout for accurate results",
+                          "Ask the caller if they have an existing cash-out refinance on this property.")
+
         # Validate state - must be recognizable
         try:
             state_code = normalize_state(state)

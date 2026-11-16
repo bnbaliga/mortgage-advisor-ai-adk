@@ -430,11 +430,15 @@ async def search_regulations(question: str, state: str = "") -> dict:
 # ------------------------------------------------------------- option comparison ---
 
 async def compare_options(state: str, property_value: float, current_mortgage_balance: float,
-                          credit_score: int = 720, cash_needed: float = 0) -> dict:
+                          credit_score: int = 720, cash_needed: float = 0,
+                          property_use: str = "primary",
+                          has_existing_cashout: bool = False,
+                          last_cashout_date: str = "") -> dict:
     """Compare eligible mortgage options (HELOC, cash-out refi, rate/term refi).
 
     Shows side-by-side comparison with rates, monthly payments, and potential savings
-    vs market benchmarks. Filters out ineligible options based on state rules and LTV.
+    vs market benchmarks. Filters out ineligible options based on state rules, LTV,
+    and property eligibility. Returns both eligible options and excluded options with reasons.
 
     Args:
         state: Two-letter state code (e.g., "TX", "CA") or state name.
@@ -442,6 +446,12 @@ async def compare_options(state: str, property_value: float, current_mortgage_ba
         current_mortgage_balance: Current mortgage balance in dollars.
         credit_score: Borrower's credit score (default 720).
         cash_needed: Amount of cash the borrower wants to access (optional).
+        property_use: The caller's own words describing property use — e.g., "rental",
+            "investment property", "my home", "primary residence", "vacation home".
+            The system normalizes these to standard categories.
+        has_existing_cashout: True if there's an existing cash-out refinance on the property.
+        last_cashout_date: ISO date of last cash-out refinance (e.g., "2025-06-15"), for
+            checking once-per-year rules. Optional.
     """
     try:
         result = store.compare_options(
@@ -449,6 +459,9 @@ async def compare_options(state: str, property_value: float, current_mortgage_ba
             current_balance=current_mortgage_balance,
             credit_score=credit_score,
             state=state,
+            property_use=property_use,
+            has_existing_cashout=has_existing_cashout,
+            last_cashout_date=last_cashout_date,
             cash_needed=cash_needed
         )
     except MortgageError as e:
@@ -489,10 +502,23 @@ async def compare_options(state: str, property_value: float, current_mortgage_ba
         "disclaimer": result["disclaimer"]
     }
 
+    # Include excluded options with reasons
+    if result.get("excluded"):
+        response["excluded_options"] = result["excluded"]
+
+    # Legacy field for backward compatibility
     if result.get("heloc_issues"):
         response["heloc_not_available"] = result["heloc_issues"]
 
-    if formatted_options:
+    # Flag if manual review needed
+    if result.get("status") == "needs_review":
+        response["needs_review"] = True
+        response["needs_review_reasons"] = result.get("needs_review_reasons", [])
+        response["say"] = (
+            "Some options require manual review due to missing state regulations. "
+            "Present the available options and offer to connect with a loan officer for the others."
+        )
+    elif formatted_options:
         response["say"] = (
             "Present each option clearly with the rate, monthly payment, and any savings vs market. "
             "Explain the differences between payment types (interest-only vs P&I). "
@@ -501,6 +527,7 @@ async def compare_options(state: str, property_value: float, current_mortgage_ba
     else:
         response["say"] = (
             "Explain that based on the information provided, the options are limited. "
+            "Mention the excluded options and why they don't qualify. "
             "Offer to connect them with a loan officer to discuss alternatives."
         )
 

@@ -45,14 +45,22 @@ def store_with_rates():
                 "heloc_rules": {
                     "max_cltv": 80,
                     "allowed_on_investment": False,
+                    "allowed_with_existing_cashout": False,  # TX Constitution: no HELOC after cash-out
                     "closing_notice_days": 12,
                     "rescission_days": 3
+                },
+                "cashout_rules": {
+                    "max_ltv": 80,
+                    "once_per_year": True  # TX Constitution: once per 12 months
                 }
             },
             "CA": {
                 "heloc_rules": {
                     "max_cltv": 90,
                     "allowed_on_investment": True
+                },
+                "cashout_rules": {
+                    "max_ltv": 85  # Higher LTV allowed in CA
                 }
             }
         },
@@ -90,8 +98,8 @@ def store_with_rates():
                 "name": "Cash-Out Refinance",
                 "term_years": 30,
                 "rates": {
-                    "excellent": {"low": 6.125, "moderate": 6.25, "standard": 6.375, "high": None, "very_high": None},
-                    "good": {"low": 6.375, "moderate": 6.5, "standard": 6.625, "high": None, "very_high": None}
+                    "excellent": {"low": 6.125, "moderate": 6.25, "standard": 6.375, "high": 6.625, "very_high": None},
+                    "good": {"low": 6.375, "moderate": 6.5, "standard": 6.625, "high": 6.875, "very_high": None}
                 },
                 "market_benchmark": {"rate": 7.0, "source": "Test Index"}
             },
@@ -302,7 +310,9 @@ class TestCompareOptions:
             property_value=500000,
             current_balance=200000,
             credit_score=750,
-            state="CA"
+            state="CA",
+            property_use="primary",
+            has_existing_cashout=False
         )
         assert result["state"] == "CA"
         assert len(result["options"]) > 0
@@ -316,14 +326,18 @@ class TestCompareOptions:
             property_value=500000,
             current_balance=400000,  # 80% LTV
             credit_score=750,
-            state="TX"
+            state="TX",
+            property_use="primary",
+            has_existing_cashout=False
         )
         assert result["state"] == "TX"
-        # HELOC should not be available
+        # HELOC should not be available - in excluded list
         heloc_options = [o for o in result["options"] if o["product"] == "heloc"]
         assert len(heloc_options) == 0
-        # Should have heloc_issues
-        assert len(result["heloc_issues"]) > 0
+        # Should have heloc_issues or excluded
+        has_heloc_issue = (result.get("heloc_issues") and len(result["heloc_issues"]) > 0) or \
+                          (result.get("excluded") and any(e["product"] == "heloc" for e in result["excluded"]))
+        assert has_heloc_issue
 
     def test_includes_cash_out_option(self, store_with_rates):
         """Cash-out refinance option included when LTV allows."""
@@ -332,6 +346,8 @@ class TestCompareOptions:
             current_balance=200000,
             credit_score=750,
             state="CA",
+            property_use="primary",
+            has_existing_cashout=False,
             cash_needed=50000
         )
         cashout_options = [o for o in result["options"] if o["product"] == "cash_out_refi"]
@@ -347,6 +363,8 @@ class TestCompareOptions:
             current_balance=300000,
             credit_score=750,
             state="CA",
+            property_use="primary",
+            has_existing_cashout=False,
             cash_needed=0
         )
         refi_options = [o for o in result["options"] if o["product"] == "rate_term_refi"]
@@ -359,6 +377,8 @@ class TestCompareOptions:
             current_balance=200000,
             credit_score=750,
             state="CA",
+            property_use="primary",
+            has_existing_cashout=False,
             cash_needed=50000
         )
         refi_options = [o for o in result["options"] if o["product"] == "rate_term_refi"]
@@ -370,7 +390,9 @@ class TestCompareOptions:
             property_value=500000,
             current_balance=200000,
             credit_score=800,  # Excellent credit
-            state="CA"
+            state="CA",
+            property_use="primary",
+            has_existing_cashout=False
         )
         # Some options should show savings vs market
         options_with_savings = [o for o in result["options"] if "savings_vs_market" in o]
@@ -384,22 +406,30 @@ class TestCompareOptions:
                 property_value=500000,
                 current_balance=200000,
                 credit_score=750,
-                state="ZZ"
+                state="ZZ",
+                property_use="primary",
+                has_existing_cashout=False
             )
         assert exc.value.code == "unknown_state"
 
-    def test_state_without_rules_shows_heloc_issues(self, store_with_rates):
-        """State without rules on file shows heloc_issues."""
-        # Add a state with no rules
+    def test_state_without_rules_shows_needs_review(self, store_with_rates):
+        """State without rules on file shows needs_review."""
+        # Add a state with no heloc_rules
         store_with_rates.state_regulations["FL"] = {}
 
         result = store_with_rates.compare_options(
             property_value=500000,
             current_balance=200000,
             credit_score=750,
-            state="FL"
+            state="FL",
+            property_use="primary",
+            has_existing_cashout=False
         )
-        assert "State regulations not on file" in result["heloc_issues"]
+        # Should indicate needs review status or have HELOC in excluded list
+        has_issue = result.get("status") == "needs_review" or \
+                    any(e["product"] == "heloc" and "not on file" in e["reason"].lower()
+                        for e in result.get("excluded", []))
+        assert has_issue
 
     def test_equity_calculation(self, store_with_rates):
         """Equity is correctly calculated."""
@@ -407,7 +437,9 @@ class TestCompareOptions:
             property_value=500000,
             current_balance=200000,
             credit_score=750,
-            state="CA"
+            state="CA",
+            property_use="primary",
+            has_existing_cashout=False
         )
         assert result["equity"] == 300000
         assert result["current_ltv"] == 40.0
@@ -440,7 +472,9 @@ class TestCompareOptionsPolicy:
             "state": "ZZ",
             "property_value": 500000,
             "current_mortgage_balance": 200000,
-            "credit_score": 750
+            "credit_score": 750,
+            "property_use": "primary",
+            "has_existing_cashout": False
         }
 
         result = asyncio.run(mortgage_gate(mock_tool, args, mock_tool_context))
@@ -458,7 +492,9 @@ class TestCompareOptionsPolicy:
             "state": "NY",
             "property_value": 500000,
             "current_mortgage_balance": 200000,
-            "credit_score": 750
+            "credit_score": 750,
+            "property_use": "primary",
+            "has_existing_cashout": False
         }
 
         result = asyncio.run(mortgage_gate(mock_tool, args, mock_tool_context))
@@ -475,7 +511,9 @@ class TestCompareOptionsPolicy:
             "state": "TX",
             "property_value": 500000,
             "current_mortgage_balance": 200000,
-            "credit_score": 900  # Invalid
+            "credit_score": 900,  # Invalid
+            "property_use": "primary",
+            "has_existing_cashout": False
         }
 
         result = asyncio.run(mortgage_gate(mock_tool, args, mock_tool_context))
@@ -491,7 +529,9 @@ class TestCompareOptionsPolicy:
             "state": "TX",
             "property_value": 0,
             "current_mortgage_balance": 200000,
-            "credit_score": 750
+            "credit_score": 750,
+            "property_use": "primary",
+            "has_existing_cashout": False
         }
 
         result = asyncio.run(mortgage_gate(mock_tool, args, mock_tool_context))
@@ -507,7 +547,9 @@ class TestCompareOptionsPolicy:
             "state": "TX",
             "property_value": 500000,
             "current_mortgage_balance": 200000,
-            "credit_score": 750
+            "credit_score": 750,
+            "property_use": "primary",
+            "has_existing_cashout": False
         }
 
         result = asyncio.run(mortgage_gate(mock_tool, args, mock_tool_context))
@@ -534,7 +576,9 @@ class TestCompareOptionsTool:
             state="CA",
             property_value=500000,
             current_mortgage_balance=200000,
-            credit_score=750
+            credit_score=750,
+            property_use="primary",
+            has_existing_cashout=False
         ))
 
         assert result["result"] == "ok"
@@ -550,7 +594,9 @@ class TestCompareOptionsTool:
             state="CA",
             property_value=500000,
             current_mortgage_balance=200000,
-            credit_score=750
+            credit_score=750,
+            property_use="primary",
+            has_existing_cashout=False
         ))
 
         assert "$" in result["property_value"]
@@ -564,7 +610,9 @@ class TestCompareOptionsTool:
             state="CA",
             property_value=500000,
             current_mortgage_balance=200000,
-            credit_score=750
+            credit_score=750,
+            property_use="primary",
+            has_existing_cashout=False
         ))
 
         for opt in result["options"]:
@@ -578,8 +626,282 @@ class TestCompareOptionsTool:
             state="ZZ",  # Invalid
             property_value=500000,
             current_mortgage_balance=200000,
-            credit_score=750
+            credit_score=750,
+            property_use="primary",
+            has_existing_cashout=False
         ))
 
         assert result["result"] == "error"
         assert result["code"] == "unknown_state"
+
+
+# --- N1 Critical Tests: Eligibility Rules ---
+
+class TestCompareOptionsEligibility:
+    """Tests for compare_options eligibility rules - N1 critical fix."""
+
+    def test_texas_existing_cashout_excludes_heloc(self, store_with_rates):
+        """TX + existing cash-out mortgage = NO HELOC (Texas Constitution)."""
+        result = store_with_rates.compare_options(
+            property_value=550000,
+            current_balance=100000,
+            credit_score=750,
+            state="TX",
+            property_use="primary",
+            has_existing_cashout=True,  # Has existing cash-out
+            cash_needed=40000
+        )
+
+        # HELOC should NOT be in options
+        heloc_options = [o for o in result["options"] if o["product"] == "heloc"]
+        assert len(heloc_options) == 0, "HELOC should be excluded when has_existing_cashout=True in TX"
+
+        # HELOC should be in excluded list with reason
+        assert "excluded" in result
+        heloc_excluded = [e for e in result["excluded"] if e["product"] == "heloc"]
+        assert len(heloc_excluded) > 0, "HELOC should be in excluded list"
+        assert "cash-out" in heloc_excluded[0]["reason"].lower()
+
+    def test_texas_no_cashout_allows_heloc(self, store_with_rates):
+        """TX without existing cash-out CAN get HELOC (if LTV allows)."""
+        result = store_with_rates.compare_options(
+            property_value=550000,
+            current_balance=100000,  # ~18% LTV, well under 80%
+            credit_score=750,
+            state="TX",
+            property_use="primary",
+            has_existing_cashout=False
+        )
+
+        # HELOC should be available
+        heloc_options = [o for o in result["options"] if o["product"] == "heloc"]
+        assert len(heloc_options) > 0, "HELOC should be available without existing cash-out in TX"
+
+    def test_california_existing_cashout_allows_heloc(self, store_with_rates):
+        """CA allows HELOC even with existing cash-out (no TX Constitution restriction)."""
+        result = store_with_rates.compare_options(
+            property_value=550000,
+            current_balance=100000,
+            credit_score=750,
+            state="CA",
+            property_use="primary",
+            has_existing_cashout=True  # Has existing cash-out, but CA allows this
+        )
+
+        # HELOC should still be available in CA
+        heloc_options = [o for o in result["options"] if o["product"] == "heloc"]
+        assert len(heloc_options) > 0, "HELOC should be available in CA even with existing cash-out"
+
+    def test_texas_investment_property_excludes_heloc(self, store_with_rates):
+        """TX + investment property = NO HELOC."""
+        result = store_with_rates.compare_options(
+            property_value=550000,
+            current_balance=100000,
+            credit_score=750,
+            state="TX",
+            property_use="investment",  # Investment property
+            has_existing_cashout=False
+        )
+
+        # HELOC should NOT be in options
+        heloc_options = [o for o in result["options"] if o["product"] == "heloc"]
+        assert len(heloc_options) == 0, "HELOC should be excluded for investment property in TX"
+
+        # Should be in excluded list
+        assert "excluded" in result
+        heloc_excluded = [e for e in result["excluded"] if e["product"] == "heloc"]
+        assert len(heloc_excluded) > 0
+
+    def test_cashout_once_per_year_excludes_recent(self, store_with_rates):
+        """TX cash-out within 365 days = NO new cash-out (once per year rule)."""
+        from datetime import datetime, timedelta
+
+        # Cash-out done 6 months ago
+        recent_date = (datetime.now() - timedelta(days=180)).strftime("%Y-%m-%d")
+
+        result = store_with_rates.compare_options(
+            property_value=550000,
+            current_balance=100000,
+            credit_score=750,
+            state="TX",
+            property_use="primary",
+            has_existing_cashout=False,
+            last_cashout_date=recent_date  # Within 1 year
+        )
+
+        # Cash-out should NOT be in options
+        cashout_options = [o for o in result["options"] if o["product"] == "cash_out_refi"]
+        assert len(cashout_options) == 0, "Cash-out should be excluded within 365 days of last cash-out in TX"
+
+        # Should be in excluded list
+        assert "excluded" in result
+        cashout_excluded = [e for e in result["excluded"] if e["product"] == "cash_out_refi"]
+        assert len(cashout_excluded) > 0
+        reason = cashout_excluded[0]["reason"].lower()
+        assert "12 months" in reason or "year" in reason or "365" in reason
+
+    def test_cashout_once_per_year_allows_old(self, store_with_rates):
+        """TX cash-out more than 365 days ago = cash-out IS allowed."""
+        from datetime import datetime, timedelta
+
+        # Cash-out done 400 days ago
+        old_date = (datetime.now() - timedelta(days=400)).strftime("%Y-%m-%d")
+
+        result = store_with_rates.compare_options(
+            property_value=550000,
+            current_balance=100000,
+            credit_score=750,
+            state="TX",
+            property_use="primary",
+            has_existing_cashout=False,
+            last_cashout_date=old_date,  # More than 1 year ago
+            cash_needed=50000
+        )
+
+        # Cash-out should be available
+        cashout_options = [o for o in result["options"] if o["product"] == "cash_out_refi"]
+        assert len(cashout_options) > 0, "Cash-out should be available after 365 days since last cash-out"
+
+    def test_uses_state_specific_cashout_max_ltv(self, store_with_rates):
+        """Uses state's cashout_rules.max_ltv instead of hardcoded 80."""
+        # CA has max_ltv: 85, TX has max_ltv: 80
+        # At 82% LTV: CA should allow cash-out, TX should block
+
+        # 82% LTV scenario
+        property_value = 500000
+        current_balance = 360000  # 72% LTV
+        cash_needed = 50000  # Would result in 82% new LTV
+
+        # California should allow (85% max)
+        result_ca = store_with_rates.compare_options(
+            property_value=property_value,
+            current_balance=current_balance,
+            credit_score=750,
+            state="CA",
+            property_use="primary",
+            has_existing_cashout=False,
+            cash_needed=cash_needed
+        )
+        cashout_ca = [o for o in result_ca["options"] if o["product"] == "cash_out_refi"]
+        assert len(cashout_ca) > 0, "CA should allow cash-out at 82% LTV (max is 85%)"
+
+        # Texas should block (80% max)
+        result_tx = store_with_rates.compare_options(
+            property_value=property_value,
+            current_balance=current_balance,
+            credit_score=750,
+            state="TX",
+            property_use="primary",
+            has_existing_cashout=False,
+            cash_needed=cash_needed
+        )
+        cashout_tx = [o for o in result_tx["options"] if o["product"] == "cash_out_refi"]
+        assert len(cashout_tx) == 0, "TX should block cash-out at 82% LTV (max is 80%)"
+
+    def test_excluded_list_has_reasons(self, store_with_rates):
+        """Excluded options include clear reasons."""
+        result = store_with_rates.compare_options(
+            property_value=550000,
+            current_balance=100000,
+            credit_score=750,
+            state="TX",
+            property_use="investment",  # Will exclude HELOC
+            has_existing_cashout=True   # Would also exclude HELOC
+        )
+
+        assert "excluded" in result
+        assert len(result["excluded"]) > 0
+
+        for excluded in result["excluded"]:
+            assert "product" in excluded
+            assert "reason" in excluded
+            assert len(excluded["reason"]) > 0
+
+
+class TestCompareOptionsPolicyValidation:
+    """Tests for policy door validation of compare_options - N1 critical fix."""
+
+    @pytest.fixture
+    def mock_tool_context(self, store_with_rates):
+        """Create mock tool context."""
+        from mortgage import tools
+        tools.use_store(store_with_rates)
+        return SimpleNamespace(
+            session=SimpleNamespace(id="test-session-456")
+        )
+
+    @pytest.fixture
+    def mock_tool(self):
+        """Create mock tool."""
+        return SimpleNamespace(name="compare_options")
+
+    def test_blocks_missing_property_use(self, mock_tool, mock_tool_context):
+        """Blocks when property_use is not provided."""
+        from mortgage.policy import mortgage_gate
+
+        args = {
+            "state": "TX",
+            "property_value": 500000,
+            "current_mortgage_balance": 200000,
+            "credit_score": 750,
+            # property_use NOT provided
+            "has_existing_cashout": False
+        }
+
+        result = asyncio.run(mortgage_gate(mock_tool, args, mock_tool_context))
+        assert result is not None
+        assert result["result"] == "blocked"
+        assert result["code"] == "missing_inputs"
+        assert "property_use" in result["reason"]
+
+    def test_blocks_missing_has_existing_cashout(self, mock_tool, mock_tool_context):
+        """Blocks when has_existing_cashout is not provided."""
+        from mortgage.policy import mortgage_gate
+
+        args = {
+            "state": "TX",
+            "property_value": 500000,
+            "current_mortgage_balance": 200000,
+            "credit_score": 750,
+            "property_use": "primary"
+            # has_existing_cashout NOT provided
+        }
+
+        result = asyncio.run(mortgage_gate(mock_tool, args, mock_tool_context))
+        assert result is not None
+        assert result["result"] == "blocked"
+        assert result["code"] == "missing_inputs"
+        assert "has_existing_cashout" in result["reason"]
+
+    def test_allows_with_all_required_params(self, mock_tool, mock_tool_context):
+        """Allows when all required parameters provided."""
+        from mortgage.policy import mortgage_gate
+
+        args = {
+            "state": "TX",
+            "property_value": 500000,
+            "current_mortgage_balance": 200000,
+            "credit_score": 750,
+            "property_use": "primary",
+            "has_existing_cashout": False
+        }
+
+        result = asyncio.run(mortgage_gate(mock_tool, args, mock_tool_context))
+        assert result is None  # None means allowed
+
+    def test_allows_various_property_use_values(self, mock_tool, mock_tool_context):
+        """Allows various property_use values (normalization happens in tool)."""
+        from mortgage.policy import mortgage_gate
+
+        for property_use in ["primary", "my home", "rental", "investment property", "vacation home"]:
+            args = {
+                "state": "TX",
+                "property_value": 500000,
+                "current_mortgage_balance": 200000,
+                "credit_score": 750,
+                "property_use": property_use,
+                "has_existing_cashout": False
+            }
+
+            result = asyncio.run(mortgage_gate(mock_tool, args, mock_tool_context))
+            assert result is None, f"Should allow property_use='{property_use}'"
