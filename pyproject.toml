@@ -1,7 +1,7 @@
 [project]
-name = "live-dj"
+name = "Mortgage-Advisor-VoiceAI"
 version = "0.1.0"
-description = "A live voice DJ powered by the Gemini Live API — EP1 of the Multimodal Agents Cookbook."
+description = "A live voice AI powered by the Gemini Live API — EP1 of the Multimodal Agents Cookbook."
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
@@ -19,7 +19,11 @@ dependencies = [
 ]
 
 [tool.uv]
-package = false
+package = true
+
+[tool.setuptools.packages.find]
+include = ["mortgage*", "front_desk*", "adk*", "adk_tools*", "genai_sdk*"]
+exclude = ["tests*", "wiki*", "assets*", "frontend*", "docs*"]
 
 [dependency-groups]
 dev = [

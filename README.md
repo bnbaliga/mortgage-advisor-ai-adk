@@ -66,3 +66,17 @@ Try: *"hey Mira"* · *"can you play something dream pop"* · *"skip this"* · *"
 ## Going deeper
 
 A second ADK live app (NOVA — voice + camera) plus a raw-SDK-vs-ADK exercise lives in [`cuppibla/multimodal-levels`](https://github.com/cuppibla/multimodal-levels) → `05-live/`.
+
+
+                    Command                      │            Description            │
+  ├──────────────────────────────────────────────────┼───────────────────────────────────┤
+  │ uv run uvicorn mortgage.server:app --port 8000   │ Mortgage Advisor (main app)       │
+  ├──────────────────────────────────────────────────┼───────────────────────────────────┤
+  │ uv run uvicorn front_desk.server:app --port 8000 │ Healthcare front desk agent (Ava) │
+  ├──────────────────────────────────────────────────┼───────────────────────────────────┤
+  │ uv run uvicorn adk.server:app --port 8000        │ DJ agent on ADK                   │
+  ├──────────────────────────────────────────────────┼───────────────────────────────────┤
+  │ uv run adk web . --port 8000                     │ ADK's built-in dev UI             │
+  ├──────────────────────────────────────────────────┼───────────────────────────────────┤
+  │ uv run pytest                                    │ Run tests                         │
+  └──────────────────────────────────────────────────┴───────────────────────────────────┘
