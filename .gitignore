@@ -1,0 +1,22 @@
+# Secrets and local config
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# Runtime databases (created on first run)
+data/mortgage/servicing.db
+data/mortgage/passages.db
+*.db-journal
+.adk/
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
