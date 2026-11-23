@@ -46,7 +46,7 @@ let speaking = false;
 let callStartTime = null;
 let durationInterval = null;
 let isConnected = false;
-let currentAgent = "origination";
+let currentAgent = "triage";
 let verificationLevel = "none";
 
 // --- UI Updates ---
@@ -151,6 +151,7 @@ function updateAgent(agent) {
   agentBadge.className = "agent-badge " + agent;
 
   const agentNames = {
+    triage: "Sam",
     origination: "Mac",
     servicing: "Ivy",
     collections: "Collections",
@@ -230,6 +231,7 @@ function addTranscript(role, text, agent = null) {
 
 function getAgentDisplayName() {
   const names = {
+    triage: "Sam (Customer Rep)",
     origination: "Mac (Origination)",
     servicing: "Ivy (Servicing)",
     collections: "Collections Agent",
@@ -319,7 +321,7 @@ function connect() {
     startCallButton.disabled = false;
 
     // Reset state
-    updateAgent("origination");
+    updateAgent("triage");
     updateVerification("none");
     clearTranscript();
   };
@@ -440,7 +442,7 @@ function endCall() {
   showSession(false);
   stopDurationTimer();
   startCallButton.disabled = false;
-  updateAgent("origination");
+  updateAgent("triage");
   updateVerification("none");
   clearTranscript();
 }
@@ -458,6 +460,6 @@ endCallButton.addEventListener("click", () => {
 });
 
 // Initialize UI
-updateAgent("origination");
+updateAgent("triage");
 updateVerification("none");
 console.log("HomeFirst AI Mortgage Advisor initialized");

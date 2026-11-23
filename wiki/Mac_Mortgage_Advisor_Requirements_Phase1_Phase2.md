@@ -1,11 +1,11 @@
 ---
 title: "Mac — AI Mortgage Advisor"
 subtitle: "Use Cases, Scope and Requirements · Phase 1 (current release) and Phase 2 (planned)"
-date: "17 November 2026 · Version 1.0 · Draft for review"
+date: "23 November 2026 · Version 1.1 · Updated with multi-agent triage"
 ---
 
 ::: meta
-**HomeFirst AI Lending.** Phase 1 describes the system as built in the `mortgage-advisor-ai-adk` repository (commit `474dba3`, 15 November 2026). Phase 2 describes planned capabilities: MCP integration, an LO Agent, and transfer from the CCS Agent to the LO Agent.
+**HomeFirst AI Lending.** Phase 1 describes the system as built in the `mortgage-advisor-ai-adk` repository. **Version 1.1** adds the Sam (triage) agent for caller routing. Phase 2 describes planned capabilities: MCP integration, an LO Agent, and transfer from the CCS Agent to the LO Agent.
 :::
 
 # 1. Introduction
@@ -16,7 +16,7 @@ This document defines the use cases, scope and requirements for Mac, an AI voice
 
 ## 1.2 Product summary
 
-Mac is a real-time voice agent that helps home buyers and homeowners find the right mortgage, checks eligibility against state rules, and connects qualified callers to a licensed loan officer. The same service hosts **Ivy**, a servicing persona that helps existing borrowers with balances, payments and autopay. By automating origination with AI, HomeFirst aims to save borrowers **0.5% to 1% in interest** compared with traditional lenders.
+Mac is a real-time voice agent that helps home buyers and homeowners find the right mortgage, checks eligibility against state rules, and connects qualified callers to a licensed loan officer. The same service hosts **Ivy**, a servicing persona that helps existing borrowers with balances, payments and autopay. A new **triage agent (Sam)** greets all callers, asks qualifying questions, and routes them to the appropriate specialist—Mac for new loans or Ivy for existing loan servicing. By automating origination with AI, HomeFirst aims to save borrowers **0.5% to 1% in interest** compared with traditional lenders.
 
 ## 1.3 Objectives
 
@@ -45,6 +45,7 @@ Requirement IDs: **UC** use case, **FR** functional requirement, **BR** business
 |---|---|---|
 | Prospective borrower | Human | Home buyer or homeowner asking about a new loan, refinance or HELOC |
 | Existing borrower | Human | Customer with a loan serviced by HomeFirst |
+| Sam (CCS Agent, triage) | AI agent | Greets callers, asks qualifying questions, routes to Mac or Ivy |
 | Mac (CCS Agent, origination) | AI agent | Answers enquiries, screens eligibility, compares options, registers leads, transfers |
 | Ivy (CCS Agent, servicing) | AI agent | Verifies identity; handles balances, payoff, autopay, payments and payment methods |
 | LO Agent (Phase 2) | AI agent | Continues qualified conversations under a licensed loan officer |
@@ -91,7 +92,8 @@ Phone channel, persistent production storage, live pricing and additional states
 
 | ID | Use case | Primary actor | Agent | Status |
 |---|---|---|---|---|
-| UC-01 | Start a call and greet the caller | Any caller | Mac / Ivy | Built |
+| UC-01 | Start a call, greet and triage the caller | Any caller | Sam | Built |
+| UC-01a | Transfer caller to specialist (Mac or Ivy) | Any caller | Sam | Built |
 | UC-02 | Check HELOC eligibility (reference call) | Prospective borrower | Mac | Built |
 | UC-03 | Compare mortgage options | Prospective borrower | Mac | Partial |
 | UC-04 | Get a rate estimate | Prospective borrower | Mac | Built |
@@ -174,7 +176,7 @@ Phone channel, persistent production storage, live pricing and additional states
 | FR-03 | Show live captions for both sides and accept typed input | Should | Built |
 | FR-04 | Speak numbers clearly and explain jargon (LTV, CLTV, DTI) | Must | Built |
 | FR-05 | Use tool results for every fact; never invent rates, products or rules | Must | Built |
-| FR-06 | Switch between Mac and Ivy during a call based on the caller's need | Should | Partial |
+| FR-06 | Route callers through Sam (triage) to Mac or Ivy based on the caller's need; switch personas during a call | Should | Built |
 
 ## 5.2 Origination (Mac)
 
@@ -272,16 +274,43 @@ Phone channel, persistent production storage, live pricing and additional states
 
 ![Figure 1. Phase 1 architecture](images/phase1.png)
 
-The browser streams microphone audio over a WebSocket to a FastAPI service. A single Google ADK agent runs a Gemini Live session (`run_live`) and loads its instructions from a function on every turn, so the active persona (Mac or Ivy) can change during a call. Every tool call passes through the policy door before and after it runs. An observer reads tool results and adds talking points to the persona's instructions.
+The browser streams microphone audio over a WebSocket to a FastAPI service. A single Google ADK agent runs a Gemini Live session (`run_live`) and loads its instructions from a function on every turn, enabling **dynamic persona switching** between three agents: Sam (triage), Mac (origination) and Ivy (servicing).
+
+**Multi-agent routing flow:**
+
+```
+Caller connects
+      ↓
+Sam (Triage) greets: "Hi, this is Sam with HomeFirst. How can I help you today?"
+      ↓
+Sam asks qualifying questions
+      ↓
+  ┌────────────┴────────────┐
+  ↓                         ↓
+"New loan"              "Existing loan"
+  ↓                         ↓
+transfer_to_specialist   transfer_to_specialist
+  ↓                         ↓
+Mac (Loan Officer)      Ivy (Servicing)
+```
+
+This design uses **persona switching** rather than the A2A (Agent-to-Agent) protocol. A single underlying agent changes its instructions and tool access based on `CallState.active_agent`. This approach is optimal for real-time voice because:
+
+- No audio gaps during "transfer" (same WebSocket, same Live session)
+- Seamless conversation continuity
+- Sub-second persona switches
+- Shared call state across all personas
+
+Every tool call passes through the policy door before and after it runs. An observer reads tool results and adds talking points to the persona's instructions.
 
 ## 8.2 Components
 
 | Component | File(s) | Responsibility |
 |---|---|---|
 | Voice service | `mortgage/server.py` | WebSocket bridge, Live session, transcripts, usage, event feed |
-| Agent | `mortgage/agent.py` | ADK agent with 28 tools and the policy callbacks |
-| Personas | `mortgage/persona.py`, `personas/` | Mac and Ivy instructions; persona selected from call state |
-| Routing | `mortgage/routing.py` | Intent detection and persona hand-off logic |
+| Agent | `mortgage/agent.py` | ADK agent with 29 tools and the policy callbacks |
+| Personas | `mortgage/persona.py`, `personas/triage.py`, `personas/origination.py`, `personas/servicing.py` | Sam, Mac and Ivy instructions; persona selected from `CallState.active_agent` |
+| Routing | `mortgage/routing.py` | `AgentType` enum (TRIAGE, ORIGINATION, SERVICING), intent detection and persona hand-off logic |
 | Policy door | `mortgage/policy.py` | Verification levels, lockout, payment authorisation, input checks, disclaimers |
 | Observer | `mortgage/observer.py` | Suggestions from tool results; risk flags |
 | Origination domain | `mortgage/mortgage.py`, `tools.py` | Rules, normalisation, pricing, comparison, officers |
@@ -293,8 +322,11 @@ The browser streams microphone audio over a WebSocket to a FastAPI service. A si
 
 | Agent | Tools |
 |---|---|
+| Sam (5) | `get_company_info`, `get_mortgage_products`, `answer_faq`, `verify_customer`, `transfer_to_specialist` |
 | Mac (13) | `get_company_info`, `get_mortgage_products`, `check_heloc_eligibility`, `check_state_regulations`, `get_rate_estimate`, `calculate_equity`, `compare_options`, `search_regulations`, `answer_faq`, `verify_customer`, `verify_customer_strong`, `register_lead`, `transfer_to_loan_officer` |
 | Ivy (15) | `get_loan_balance`, `get_payment_history`, `get_payoff_quote`, `change_payment_date`, `get_autopay_status`, `setup_autopay`, `cancel_autopay`, `get_payment_methods`, `initiate_secure_card_capture`, `complete_secure_card_capture`, `add_bank_account`, `set_default_payment_method`, `remove_payment_method`, `prepare_payment`, `confirm_payment` |
+
+Sam has limited tools by design—only basic information and the `transfer_to_specialist` tool to route callers. This prevents Sam from accidentally handling tasks meant for Mac or Ivy.
 
 ## 8.4 Technology
 
@@ -312,17 +344,17 @@ Python 3.11+, FastAPI, Google ADK 2.8, Gemini Live API (`gemini-3.1-flash-live-p
 
 ## 9.2 Open items to close before a pilot
 
-| # | Item | Affects |
-|---|---|---|
-| 1 | Persona routing is written but not connected, so a live call stays with Mac; Ivy cannot take over | FR-06 |
-| 2 | Strong verification accepts date of birth but does not check it; only the balance is compared | FR-41 |
-| 3 | Persona tool restrictions are logged, not enforced | FR-45 |
-| 4 | Regulation search has no approved content loaded, uses a missing embedding library, and on no result tells the agent to answer from training | FR-22 |
-| 5 | Rate sheet and market benchmarks are sample data, yet are used for "below market" statements | FR-15 |
-| 6 | Officer availability treats a server's local time as UTC | FR-50 |
-| 7 | Property-use matching is loose (for example "a" matches investment) | FR-10 |
-| 8 | No end-to-end call scenario tests | NFR-03 |
-| 9 | `.env` and `mortgage/.adk/session.db` are committed; add a `.gitignore` (the `.env` holds only a placeholder key today) | NFR-04 |
+| # | Item | Affects | Status |
+|---|---|---|---|
+| 1 | ~~Persona routing is written but not connected, so a live call stays with Mac; Ivy cannot take over~~ | FR-06 | **CLOSED** — Sam (triage) now greets all callers and routes to Mac or Ivy via `transfer_to_specialist` |
+| 2 | Strong verification accepts date of birth but does not check it; only the balance is compared | FR-41 | Open |
+| 3 | Persona tool restrictions are logged, not enforced | FR-45 | Open |
+| 4 | Regulation search has no approved content loaded, uses a missing embedding library, and on no result tells the agent to answer from training | FR-22 | Open |
+| 5 | Rate sheet and market benchmarks are sample data, yet are used for "below market" statements | FR-15 | Open |
+| 6 | Officer availability treats a server's local time as UTC | FR-50 | Open |
+| 7 | Property-use matching is loose (for example "a" matches investment) | FR-10 | Open |
+| 8 | No end-to-end call scenario tests | NFR-03 | Open |
+| 9 | `.env` and `mortgage/.adk/session.db` are committed; add a `.gitignore` (the `.env` holds only a placeholder key today) | NFR-04 | Open |
 
 # 10. Phase 2 requirements (planned)
 
@@ -480,7 +512,8 @@ Phase 2 adds three capabilities on the Phase 1 foundation. **MCP** connects the 
 | Term | Meaning |
 |---|---|
 | ADK | Google Agent Development Kit, the framework the agents are built on |
-| CCS Agent | The current customer-facing voice agent: Mac (origination) and Ivy (servicing) |
+| CCS Agent | The current customer-facing voice agent: Sam (triage), Mac (origination) and Ivy (servicing) |
+| Persona switching | Architecture pattern where a single ADK agent dynamically changes its instructions and tool access based on call state, enabling seamless "transfers" between personas without audio gaps |
 | LO Agent | Phase 2 AI agent that supports licensed loan officers in the call |
 | LO | Licensed loan officer (NMLS mortgage loan originator) |
 | MCP | Model Context Protocol, a standard for connecting AI agents to tools and data |

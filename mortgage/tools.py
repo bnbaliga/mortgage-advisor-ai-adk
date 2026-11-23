@@ -619,6 +619,89 @@ async def verify_customer_strong(
     }
 
 
+# ------------------------------------------------------------- specialist transfer ---
+
+async def transfer_to_specialist(
+    specialist: str,
+    reason: str,
+    tool_context: ToolContext
+) -> dict:
+    """Transfer the caller to a specialist agent (Mac or Ivy).
+
+    Use this tool when you've determined which specialist can best help the caller:
+    - Transfer to "origination" (Mac) for new loans, refinancing, HELOCs, rate questions
+    - Transfer to "servicing" (Ivy) for existing loan questions, payments, account management
+
+    Args:
+        specialist: The specialist to transfer to - "origination" for Mac (Loan Officer)
+            or "servicing" for Ivy (Servicing Specialist).
+        reason: Brief reason for the transfer to help the specialist understand the caller's needs.
+    """
+    from mortgage import events
+
+    call = store.call(tool_context.session.id)
+    old_agent = call.active_agent
+
+    # Validate specialist
+    valid_specialists = {"origination", "servicing"}
+    specialist_lower = specialist.lower().strip()
+
+    # Map common names to agent types
+    name_map = {
+        "mac": "origination",
+        "loan officer": "origination",
+        "origination": "origination",
+        "ivy": "servicing",
+        "servicing": "servicing",
+        "servicing specialist": "servicing",
+    }
+
+    target_agent = name_map.get(specialist_lower)
+    if not target_agent:
+        return {
+            "result": "error",
+            "code": "invalid_specialist",
+            "message": f"Unknown specialist '{specialist}'. Use 'origination' for Mac (new loans) or 'servicing' for Ivy (existing loans).",
+            "say": "I can transfer you to Mac for new loan questions or Ivy for existing loan questions. Which would be more helpful?"
+        }
+
+    # Update the call state to switch agents
+    call.active_agent = target_agent
+
+    # Publish agent change event to frontend
+    events.publish(tool_context.session.id, {
+        "type": "agent_change",
+        "agent": target_agent,
+        "from_agent": old_agent,
+        "reason": reason
+    })
+
+    # Get the specialist's name for the response
+    specialist_names = {
+        "origination": "Mac",
+        "servicing": "Ivy"
+    }
+    specialist_name = specialist_names[target_agent]
+
+    specialist_roles = {
+        "origination": "Loan Officer",
+        "servicing": "Servicing Specialist"
+    }
+    specialist_role = specialist_roles[target_agent]
+
+    return {
+        "result": "ok",
+        "transferred": True,
+        "from_agent": old_agent,
+        "to_agent": target_agent,
+        "specialist_name": specialist_name,
+        "specialist_role": specialist_role,
+        "reason": reason,
+        "say": f"The transfer is complete. You are now {specialist_name}, the {specialist_role}. "
+               f"Greet the caller warmly and help them with: {reason}"
+    }
+
+
 ALL_TOOLS = [
     get_company_info,
     get_mortgage_products,
@@ -629,6 +712,7 @@ ALL_TOOLS = [
     verify_customer_strong,
     register_lead,
     transfer_to_loan_officer,
+    transfer_to_specialist,
     answer_faq,
     calculate_equity,
     search_regulations,

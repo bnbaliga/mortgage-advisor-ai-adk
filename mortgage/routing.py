@@ -22,6 +22,7 @@ log = logging.getLogger("mortgage.routing")
 
 class AgentType(Enum):
     """Available agent personas."""
+    TRIAGE = "triage"            # Sam - initial triage, routes to specialists
     ORIGINATION = "origination"  # Mac - new loans, inquiries
     SERVICING = "servicing"      # Ivy - existing loan management
     WELCOME = "welcome"          # Welcome calls for new borrowers
@@ -68,18 +69,11 @@ def detect_initial_intent(call: CallState, has_active_loan: bool) -> RoutingDeci
     Returns:
         RoutingDecision with the initial agent
     """
-    # If they have an active loan, default to servicing
-    if has_active_loan:
-        return RoutingDecision(
-            agent=AgentType.SERVICING,
-            reason="existing customer with active loan",
-            silent=True
-        )
-
-    # Default to origination for new callers
+    # Default to triage (Sam) for all new calls
+    # Sam will ask qualifying questions and route to the right specialist
     return RoutingDecision(
-        agent=AgentType.ORIGINATION,
-        reason="new or prospective customer",
+        agent=AgentType.TRIAGE,
+        reason="initial triage for new call",
         silent=True
     )
 
@@ -160,11 +154,15 @@ def get_agent_greeting(agent: AgentType, company_name: str, agent_name: str) -> 
     Args:
         agent: The agent type
         company_name: Company name for greeting
-        agent_name: Agent's name (Mac, Ivy, etc.)
+        agent_name: Agent's name (Mac, Ivy, Sam, etc.)
 
     Returns:
         Greeting string for the agent
     """
+    if agent == AgentType.TRIAGE:
+        return (f"Hi, this is {agent_name} with {company_name}. "
+                "How can I help you today?")
+
     if agent == AgentType.SERVICING:
         return (f"Hi, this is {agent_name} with {company_name} servicing. "
                 "This call may be recorded for quality. "

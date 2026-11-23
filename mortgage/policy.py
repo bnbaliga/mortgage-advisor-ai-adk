@@ -80,6 +80,11 @@ IDENTITY_TOOLS = {
 
 # Agent-based tool access control
 AGENT_TOOL_ACCESS = {
+    "triage": {
+        # Sam's triage tools - basic info and transfers only
+        "get_company_info", "get_mortgage_products", "answer_faq",
+        "verify_customer", "transfer_to_specialist",
+    },
     "origination": {
         # Mac's origination tools
         "get_company_info", "get_mortgage_products", "check_heloc_eligibility",

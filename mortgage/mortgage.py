@@ -122,7 +122,7 @@ class CallState:
     inquiry_context: dict = field(default_factory=dict)  # track conversation context
 
     # Agent routing
-    active_agent: str = "origination"  # origination, servicing, welcome, collections
+    active_agent: str = "triage"  # triage, origination, servicing, welcome, collections
 
     # Servicing fields
     verified_loan_id: Optional[str] = None

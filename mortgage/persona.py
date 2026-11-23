@@ -21,9 +21,10 @@ from google.adk.agents.readonly_context import ReadonlyContext
 from mortgage import tools
 from mortgage.personas.origination import MAC_INSTRUCTION, AGENT_NAME as MAC_NAME
 from mortgage.personas.servicing import IVY_INSTRUCTION, OBSERVER_SUGGESTIONS_FORMAT, AGENT_NAME as IVY_NAME
+from mortgage.personas.triage import SAM_INSTRUCTION, AGENT_NAME as SAM_NAME
 
-# Default agent name for API (Mac is the default origination agent)
-AGENT_NAME = MAC_NAME
+# Default agent name for API (Sam is the default triage agent)
+AGENT_NAME = SAM_NAME
 
 # Environment overrides
 ACCENT = os.getenv("MORTGAGE_ACCENT", "").strip()
@@ -73,12 +74,18 @@ def instruction(ctx: ReadonlyContext | None = None) -> str:
     company = tools.store.info["name"]
 
     # Determine which persona to use
-    active_agent = call_state.active_agent if call_state else "origination"
+    active_agent = call_state.active_agent if call_state else "triage"
 
     # Select persona instruction
-    if active_agent == "servicing":
+    if active_agent == "triage":
+        base = SAM_INSTRUCTION
+        agent_name = SAM_NAME
+    elif active_agent == "servicing":
         base = IVY_INSTRUCTION
         agent_name = IVY_NAME
+    elif active_agent == "origination":
+        base = MAC_INSTRUCTION
+        agent_name = MAC_NAME
     elif active_agent == "collections":
         # Future: Add collections persona
         base = IVY_INSTRUCTION  # Fallback to Ivy for now
@@ -88,9 +95,9 @@ def instruction(ctx: ReadonlyContext | None = None) -> str:
         base = IVY_INSTRUCTION  # Fallback to Ivy for now
         agent_name = IVY_NAME
     else:
-        # Default: origination (Mac)
-        base = MAC_INSTRUCTION
-        agent_name = MAC_NAME
+        # Default: triage (Sam)
+        base = SAM_INSTRUCTION
+        agent_name = SAM_NAME
 
     # Format observer suggestions
     observer_suggestions = ""
@@ -117,16 +124,17 @@ def instruction(ctx: ReadonlyContext | None = None) -> str:
 def get_agent_info(ctx: ReadonlyContext | None = None) -> dict:
     """Get information about the current agent for UI display."""
     call_state = get_call_state(ctx)
-    active_agent = call_state.active_agent if call_state else "origination"
+    active_agent = call_state.active_agent if call_state else "triage"
 
     agent_info = {
+        "triage": {"name": SAM_NAME, "role": "Customer Representative", "icon": "user-circle"},
         "origination": {"name": MAC_NAME, "role": "Mortgage Advisor", "icon": "user"},
         "servicing": {"name": IVY_NAME, "role": "Servicing Specialist", "icon": "headset"},
         "collections": {"name": "Collections", "role": "Collections Specialist", "icon": "phone"},
         "welcome": {"name": "Welcome", "role": "Welcome Specialist", "icon": "star"},
     }
 
-    info = agent_info.get(active_agent, agent_info["origination"])
+    info = agent_info.get(active_agent, agent_info["triage"])
     info["active_agent"] = active_agent
 
     if call_state:
