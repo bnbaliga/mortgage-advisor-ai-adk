@@ -17,7 +17,7 @@ from google.genai import types
 from mortgage_advisor.agent import tools
 from mortgage_advisor.agent.persona import AGENT_NAME
 from mortgage_advisor.api.dependencies import RUN_CONFIG, get_store, runner, session_service
-from mortgage_advisor.core.config import APP_NAME, GREET_ON_CONNECT, LIVE_MODEL, VOICE
+from mortgage_advisor.core.config import ALLOWED_ORIGINS, APP_NAME, GREET_ON_CONNECT, LIVE_MODEL, VOICE
 from mortgage_advisor.services import events
 from mortgage_advisor.services.usage import Usage, server_totals
 
@@ -65,8 +65,23 @@ def _friendly(exc: BaseException) -> str:
     return s
 
 
+def origin_allowed(origin: str | None, host: str | None) -> bool:
+    """Same-origin pages are always allowed; other sites only if listed in ALLOWED_ORIGINS.
+    Browsers can't fake the Origin header, so this stops other websites from opening calls."""
+    if not origin:
+        return True  # non-browser clients (tests, tools) send no Origin
+    origin = origin.rstrip("/")
+    if origin.split("://", 1)[-1] == (host or ""):
+        return True
+    return origin in ALLOWED_ORIGINS
+
+
 @router.websocket("/ws")
 async def ws(websocket: WebSocket):
+    if not origin_allowed(websocket.headers.get("origin"), websocket.headers.get("host")):
+        log.warning("rejected /ws from origin %s", websocket.headers.get("origin"))
+        await websocket.close(code=1008)
+        return
     await websocket.accept()
     session = await session_service.create_session(app_name=APP_NAME, user_id="caller")
     call_id = session.id

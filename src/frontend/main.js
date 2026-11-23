@@ -277,9 +277,17 @@ function stopVoice() {
 
 // --- WebSocket Connection ---
 
-function connect() {
+// Backend address comes from config.js (window.MAC_CONFIG.backendUrl).
+// Empty means the backend serves this page (same origin), as in local dev.
+function wsUrl() {
+  const base = (window.MAC_CONFIG && window.MAC_CONFIG.backendUrl || "").trim().replace(/\/+$/, "");
+  if (base) return base.replace(/^http/, "ws") + "/ws";
   const proto = location.protocol === "https:" ? "wss" : "ws";
-  ws = new WebSocket(`${proto}://${location.host}/ws`);
+  return `${proto}://${location.host}/ws`;
+}
+
+function connect() {
+  ws = new WebSocket(wsUrl());
   ws.binaryType = "arraybuffer";
 
   ws.onopen = () => {

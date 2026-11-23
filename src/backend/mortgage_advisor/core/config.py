@@ -35,3 +35,9 @@ VOICE = os.getenv("MORTGAGE_VOICE") or os.getenv("LIVE_VOICE", "Aoede")
 GREET_ON_CONNECT = os.getenv("MORTGAGE_GREETING", "1") != "0"
 
 APP_NAME = "mortgage-advisor"
+
+# ---- browser access ------------------------------------------------------
+# Comma-separated web origins allowed to call the API and open /ws when the
+# frontend is hosted separately, e.g. "https://my-project.web.app".
+# Empty = same-origin only (the backend serves the frontend itself).
+ALLOWED_ORIGINS = [o.strip().rstrip("/") for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]

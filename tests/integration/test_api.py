@@ -42,3 +42,19 @@ def test_frontend_is_served():
     assert r.status_code == 200
     assert "Mac" in r.text
     assert client.get("/main.js").status_code == 200
+
+
+def test_ws_rejects_foreign_origin():
+    import pytest
+    from starlette.websockets import WebSocketDisconnect
+
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect("/ws", headers={"origin": "https://evil.example"}) as ws:
+            ws.receive_text()
+    assert exc.value.code == 1008
+
+
+def test_config_js_is_served():
+    r = client.get("/config.js")
+    assert r.status_code == 200
+    assert "MAC_CONFIG" in r.text

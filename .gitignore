@@ -20,3 +20,4 @@ data/mortgage/passages.db
 .idea/
 .vscode/
 .DS_Store
+.firebase/

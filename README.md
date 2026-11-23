@@ -47,7 +47,7 @@ mortgage-advisor-ai-adk/
 │   │           ├── personas/         # Mac and Ivy instructions
 │   │           ├── graph.py          # persona routing (Mac <-> Ivy)
 │   │           └── observer.py       # talking-point suggestions from tool results
-│   └── frontend/                     # static web client (HTML, JS, AudioWorklet, CSS)
+│   └── frontend/                     # static web client; config.js sets the backend URL
 ├── data/mortgage/            # seed data: products, rules, rate sheet, servicing loans
 ├── migrations/               # SQL schema for the servicing database
 ├── tests/
@@ -101,6 +101,12 @@ docker compose up --build     # http://localhost:8080
 ```
 
 The image runs `uvicorn mortgage_advisor.main:app` on `$PORT` (8080 by default), as Cloud Run expects. Runtime databases live in a named volume.
+
+## Deploy to Google Cloud (free tier)
+
+Backend on Cloud Run, frontend on Firebase Hosting: see [docs/deploy-gcp.md](docs/deploy-gcp.md).
+When the frontend is hosted separately, set `backendUrl` in `src/frontend/config.js` and
+`ALLOWED_ORIGINS` on the backend.
 
 ## Configuration
 
