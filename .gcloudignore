@@ -10,7 +10,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 archive/
-docs/
+wiki/
 tests/
 data/mortgage/*.db
 firebase.json

@@ -54,7 +54,7 @@ mortgage-advisor-ai-adk/
 │   ├── unit/
 │   ├── integration/
 │   └── conftest.py
-├── docs/                     # reviews, requirements, diagrams
+├── wiki/                     # requirements, architecture, reviews, deploy guide
 └── archive/                  # earlier demos this project grew from (DJ, clinic front desk)
 ```
 
@@ -104,7 +104,7 @@ The image runs `uvicorn mortgage_advisor.main:app` on `$PORT` (8080 by default),
 
 ## Deploy to Google Cloud (free tier)
 
-Backend on Cloud Run, frontend on Firebase Hosting: see [docs/deploy-gcp.md](docs/deploy-gcp.md).
+Backend on Cloud Run, frontend on Firebase Hosting: see [wiki/deploy-gcp.md](wiki/deploy-gcp.md).
 When the frontend is hosted separately, set `backendUrl` in `src/frontend/config.js` and
 `ALLOWED_ORIGINS` on the backend.
 
