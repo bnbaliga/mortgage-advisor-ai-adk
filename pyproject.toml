@@ -1,7 +1,8 @@
 [project]
-name = "Mortgage-Advisor-VoiceAI"
-version = "0.1.0"
-description = "A live voice AI powered by the Gemini Live API — EP1 of the Multimodal Agents Cookbook."
+name = "mortgage-advisor-ai-adk"
+version = "0.2.0"
+description = "Mac — AI Mortgage Advisor: a real-time voice agent for mortgage origination and servicing, built on Google ADK and the Gemini Live API."
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
@@ -18,12 +19,12 @@ dependencies = [
     "numpy>=2.4.6",
 ]
 
-[tool.uv]
-package = true
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
 
-[tool.setuptools.packages.find]
-include = ["mortgage*", "front_desk*", "adk*", "adk_tools*", "genai_sdk*"]
-exclude = ["tests*", "wiki*", "assets*", "frontend*", "docs*"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/backend/mortgage_advisor"]
 
 [dependency-groups]
 dev = [
@@ -31,5 +32,5 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-pythonpath = ["."]
+pythonpath = ["src/backend"]
 testpaths = ["tests"]

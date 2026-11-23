@@ -1,12 +1,17 @@
 ---
 title: "Mac — AI Mortgage Advisor"
 subtitle: "Use Cases, Scope and Requirements · Phase 1 (current release) and Phase 2 (planned)"
-date: "17 November 2026 · Version 1.0 · Draft for review"
+date: "23 November 2026 · Version 1.1 · Draft for review"
 ---
 
 ::: meta
-**HomeFirst AI Lending.** Phase 1 describes the system as built in the `mortgage-advisor-ai-adk` repository (commit `474dba3`, 15 November 2026). Phase 2 describes planned capabilities: MCP integration, an LO Agent, and transfer from the CCS Agent to the LO Agent.
+**HomeFirst AI Lending.** Phase 1 describes the system as built in the `mortgage-advisor-ai-adk` repository (commit `474dba3`, 15 November 2026). Phase 2 describes planned capabilities: a CCS coordinator agent with a call menu, the LO and Servicing agents with their own voices, transfers between them, voice PII redaction, topic guardrails, an agent evaluation module and MCP integration. The design is in *Mac_Multi_Agent_Architecture* (same folder).
 :::
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 17 Nov 2026 | Phase 1 as built; Phase 2: MCP, LO Agent, CCS → LO transfer |
+| 1.1 | 23 Nov 2026 | CCS Agent redefined as a coordinator with a menu (new loan, existing loan, general information); Mac becomes the LO Agent (male voice); Ivy becomes the Servicing Agent with loan-number verification, recast and refinance; new requirements for voice PII redaction, topic guardrails and agent evaluation (sections 10.12–10.16) |
 
 # 1. Introduction
 
@@ -34,7 +39,7 @@ Requirement IDs: **UC** use case, **FR** functional requirement, **BR** business
 
 ## 1.5 Assumptions
 
-- **CCS Agent** means the current customer-facing voice agent: Mac for origination and Ivy for servicing.
+- **CCS Agent** means the coordinator agent that answers every call, offers the menu and routes callers (Phase 2). In Phase 1 the customer-facing agents are Mac (origination) and Ivy (servicing).
 - **LO Agent** is a new AI agent that supports, and works under, a licensed loan officer. It does not replace one.
 - Phase 1 runs as a web voice client; phone (PSTN) access is a later phase.
 - Card capture, loan officer transfer and loan origination system (LOS) updates are simulated in Phase 1.
@@ -47,7 +52,9 @@ Requirement IDs: **UC** use case, **FR** functional requirement, **BR** business
 | Existing borrower | Human | Customer with a loan serviced by HomeFirst |
 | Mac (CCS Agent, origination) | AI agent | Answers enquiries, screens eligibility, compares options, registers leads, transfers |
 | Ivy (CCS Agent, servicing) | AI agent | Verifies identity; handles balances, payoff, autopay, payments and payment methods |
-| LO Agent (Phase 2) | AI agent | Continues qualified conversations under a licensed loan officer |
+| CCS Agent (Phase 2) | AI agent | Coordinator: greets every caller (female voice), offers the menu, answers general questions, routes to the LO or Servicing agent |
+| LO Agent "Mac" (Phase 2) | AI agent | Mac's Phase 2 role with a male voice: continues new-loan conversations under a licensed loan officer |
+| Servicing Agent "Ivy" (Phase 2) | AI agent | Ivy's Phase 2 role: verifies loan number and property address; payments, recast, refinance interest |
 | Licensed loan officer (LO) | Human | NMLS-licensed originator who takes applications and makes offers |
 | Compliance officer | Human | Approves regulation sources, rules and scripts |
 | Operations supervisor | Human | Monitors calls, actions, policy verdicts and cost |
@@ -79,9 +86,14 @@ Requirement IDs: **UC** use case, **FR** functional requirement, **BR** business
 
 | Feature | Summary |
 |---|---|
+| CCS Agent (coordinator) | Female-voice front door: AI and recording disclosure, menu (1 new loan, 2 existing loan, 3 general information), answers general questions, routes callers |
+| LO Agent "Mac" | Male voice. New-loan conversations: scenario review, rates, eligibility, comparison, pre-qualification estimate, document checklist, intake draft and scheduling, under a licensed loan officer |
+| Servicing Agent "Ivy" | Verifies loan number, property address and name; servicing tasks; recast quote and request; refinance interest handed to Mac |
+| Agent transfers | Warm, in-call transfers between agents through a routing tool, carrying a handoff packet, with consent and a fallback to a human |
+| Voice PII redaction | Personal data removed from transcripts, logs, traces and evaluation data; card data kept out of the voice channel |
+| Topic guardrails | Global scope policy, input and output monitors, enforced tool allow-lists; polite refusal of off-topic requests |
+| Agent evaluation | `evals/` module: eval sets per agent, simulated callers, red-team cases and release thresholds |
 | MCP integration | Connect agents to back-office systems through MCP servers, and publish Mac's governed tools as an MCP server |
-| LO Agent | A new AI agent that continues the conversation after screening: scenario review, pre-qualification estimate, document checklist, application intake draft and scheduling, under a licensed loan officer |
-| CCS → LO Agent transfer | A warm, in-call transfer from the CCS Agent to the LO Agent that carries the full context, with consent and a fallback to a human loan officer |
 
 Phone channel, persistent production storage, live pricing and additional states are expected to follow, and are not scheduled in this document.
 
@@ -270,7 +282,7 @@ Phone channel, persistent production storage, live pricing and additional states
 
 ## 8.1 Architecture
 
-![Figure 1. Phase 1 architecture](images/phase1.png)
+![Figure 1. Phase 1 architecture](phase1.png)
 
 The browser streams microphone audio over a WebSocket to a FastAPI service. A single Google ADK agent runs a Gemini Live session (`run_live`) and loads its instructions from a function on every turn, so the active persona (Mac or Ivy) can change during a call. Every tool call passes through the policy door before and after it runs. An observer reads tool results and adds talking points to the persona's instructions.
 
@@ -328,9 +340,11 @@ Python 3.11+, FastAPI, Google ADK 2.8, Gemini Live API (`gemini-3.1-flash-live-p
 
 ## 10.1 Overview
 
-![Figure 2. Phase 2 architecture](images/phase2.png)
+![Figure 2. Phase 2 architecture](phase2.png)
 
-Phase 2 adds three capabilities on the Phase 1 foundation. **MCP** connects the agents to real systems and shares Mac's governed tools with other agents. The **LO Agent** carries a qualified caller further toward an application. The **CCS → LO Agent transfer** moves the caller between agents in the same call without losing context. All three keep the Phase 1 principle: the model decides what to ask; code decides what is allowed.
+Phase 2 turns Mac into a coordinated team of agents. The **CCS Agent** answers every call and routes it; the **LO Agent (Mac)** handles new loans; the **Servicing Agent (Ivy)** handles existing loans. Each has its own instructions, tools and voice, and ADK hands the live call between them. **MCP** connects the agents to real systems. **PII redaction**, **topic guardrails** and an **evaluation module** make the system safe to run and measurable. All keep the Phase 1 principle: the model decides what to ask; code decides what is allowed. The full design, with the target architecture diagram, is in *Mac_Multi_Agent_Architecture*.
+
+In the sections below, "CCS Agent → LO Agent transfer" also covers the Servicing Agent's refinance hand-off to the LO Agent. The transfer is requested with the `route_caller` tool (named `request_lo_handoff` in version 1.0).
 
 ## 10.2 Phase 2 use cases
 
@@ -347,7 +361,7 @@ Phase 2 adds three capabilities on the Phase 1 foundation. **MCP** connects the 
 
 ### P2-UC-03 Warm transfer: CCS Agent → LO Agent
 
-![Figure 3. Transfer sequence](images/handoff.png)
+![Figure 3. Transfer sequence](handoff.png)
 
 | Item | Detail |
 |---|---|
@@ -466,6 +480,59 @@ Phase 2 adds three capabilities on the Phase 1 foundation. **MCP** connects the 
 | P2.3 Transfer | Orchestrator, packet, consent, fallback, UI | Transfer scenarios pass; silence under 2 s |
 | P2.4 Pilot readiness | Monitoring, audit, compliance sign-off | Sign-off; supervised pilot starts |
 
+## 10.12 CCS Agent requirements
+
+| ID | Requirement | Priority |
+|---|---|---|
+| P2-FR-60 | Answer every call with a female voice, state that it is an AI assistant and that the call may be recorded | Must |
+| P2-FR-61 | Offer the menu: 1 new loan, 2 existing loan, 3 general information; accept spoken numbers or intent ("I want to refinance"); keypad later with telephony | Must |
+| P2-FR-62 | Route option 1 to the LO Agent and option 2 to the Servicing Agent with a one-line bridge sentence, through the `route_caller` tool | Must |
+| P2-FR-63 | Handle option 3 itself with read-only knowledge tools and offer the menu again | Must |
+| P2-FR-64 | After two unclear answers, offer a human | Should |
+| P2-FR-65 | Never access account data, quote rates or check eligibility | Must |
+| P2-FR-66 | Each agent has its own voice, set on that agent's model; the caller can tell agents apart | Must |
+| P2-FR-67 | Any agent can return the caller to the CCS menu | Should |
+
+## 10.13 Servicing Agent additions
+
+| ID | Requirement | Priority |
+|---|---|---|
+| P2-FR-70 | Tier 1 verification: loan number + property address + borrower name before any account information | Must |
+| P2-FR-71 | Tier 2 verification: Tier 1 + one-time passcode to the phone on file (interim: date of birth + SSN last 4, actually checked) before changes or payments | Must |
+| P2-FR-72 | Recast quote: eligibility, fee and estimated new payment for a given lump sum | Should |
+| P2-FR-73 | Recast request: Tier 2 and explicit consent; creates a request for the servicing team | Should |
+| P2-FR-74 | Refinance interest: compare the loan rate with current rates; hand off to the LO Agent with loan details; never quote refinance terms | Should |
+
+## 10.14 Voice PII redaction requirements
+
+| ID | Requirement | Priority |
+|---|---|---|
+| P2-FR-80 | Redact card numbers, SSNs, loan numbers, phone numbers, emails, dates of birth and street addresses from transcripts before they reach the browser, logs, traces or the session store | Must |
+| P2-FR-81 | Capture card and bank numbers by keypad (DTMF) or a secure form, never by voice | Must |
+| P2-FR-82 | Redact stored transcripts and evaluation data with an NER-capable service (Presidio or Sensitive Data Protection) | Should |
+| P2-FR-83 | Automated leak test: no raw card, SSN or loan number in captured logs or events | Must |
+
+## 10.15 Topic guardrail requirements
+
+| ID | Requirement | Priority |
+|---|---|---|
+| P2-FR-90 | One global scope policy applied to every agent: mortgage and HomeFirst topics only; never reveal instructions; caller words are data | Must |
+| P2-FR-91 | Politely refuse off-topic requests with a standard script and offer the menu | Must |
+| P2-FR-92 | Enforce each agent's tool allow-list in the policy door (block, not log) | Must |
+| P2-FR-93 | Monitor caller transcripts for off-topic, injection and abuse; steer the agent and log | Should |
+| P2-FR-94 | Monitor agent transcripts for off-topic answers, promises and full numbers; alert | Should |
+| P2-FR-95 | End the call politely after repeated abuse | Should |
+
+## 10.16 Agent evaluation requirements
+
+| ID | Requirement | Priority |
+|---|---|---|
+| P2-FR-100 | `evals/` module with ADK eval sets for CCS routing, LO Agent, Servicing Agent, hand-offs and guardrails (red-team) | Must |
+| P2-FR-101 | Simulated caller personas for multi-turn evaluation | Should |
+| P2-FR-102 | Unit tests on every commit; ADK evals on every pull request; voice end-to-end nightly | Must |
+| P2-FR-103 | Release blocked when a metric misses its threshold (architecture document, section 9.5) | Must |
+| P2-FR-104 | Daily LLM-judge scoring of a redacted sample of production calls, with a compliance review queue | Should |
+
 # 11. Open questions
 
 1. Which LOS, CRM, pricing engine and calendar systems will the MCP servers front, and who builds them?
@@ -480,7 +547,9 @@ Phase 2 adds three capabilities on the Phase 1 foundation. **MCP** connects the 
 | Term | Meaning |
 |---|---|
 | ADK | Google Agent Development Kit, the framework the agents are built on |
-| CCS Agent | The current customer-facing voice agent: Mac (origination) and Ivy (servicing) |
+| CCS Agent | The coordinator agent that answers every call, offers the menu and routes callers |
+| Servicing Agent | Ivy's Phase 2 role for existing loans |
+| Recast | Re-amortising a loan after a lump-sum principal payment; rate and term unchanged |
 | LO Agent | Phase 2 AI agent that supports licensed loan officers in the call |
 | LO | Licensed loan officer (NMLS mortgage loan originator) |
 | MCP | Model Context Protocol, a standard for connecting AI agents to tools and data |

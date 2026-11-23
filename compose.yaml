@@ -1,0 +1,22 @@
+# Local container run:  docker compose up --build   then open http://localhost:8080
+services:
+  mortgage-advisor:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      # Keep the servicing and regulation databases between restarts.
+      - mortgage-data:/app/data/mortgage-runtime
+    environment:
+      MORTGAGE_SERVICING_DB: /app/data/mortgage-runtime/servicing.db
+      MORTGAGE_KNOWLEDGE_DB: /app/data/mortgage-runtime/passages.db
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  mortgage-data:

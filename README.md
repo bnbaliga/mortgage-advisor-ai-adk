@@ -1,82 +1,117 @@
-# healthtech-voice-agent — a voice agent you can interrupt
+# Mac — AI Mortgage Advisor
 
-Starting point for a patient-facing healthcare voice agent — booking appointments and handling other front-desk use cases. Talk over it mid-sentence and it stops, listens, and picks the thread back up.
+A real-time, interruptible voice agent for mortgage origination and servicing, built on **Google ADK** and the **Gemini Live API**.
 
-Built on the **Gemini Live API** — three times over, with the same browser and the same agent shell: raw SDK, then ADK, then ADK with real abilities and a policy gate — so you can see exactly what each layer buys you.
+- **Mac** (origination): products, rate estimates, HELOC eligibility with state rules, option comparison, regulation questions with citations, leads, loan officer transfer.
+- **Ivy** (servicing): identity verification, balance and payoff, payment history, due-date changes, autopay, payments and payment methods.
+- A **policy door** checks every tool call in code: verification levels, lockout, payment authorisation, fail-closed state rules and disclaimers.
 
-This repo is adapted from [`live-dj`](https://github.com/cuppibla/live-dj), an interruptible voice-agent demo (a late-night radio DJ). The three-layer structure, barge-in handling, and tool/policy-gate pattern below carry over as-is; the persona, tools, and use cases are being repurposed for healthcare — starting with appointment booking.
+## Project layout
 
-## The healthcare agent: [`front_desk/`](front_desk/)
-
-**Ava** answers the phone for a (fictional) family clinic: book / reschedule / cancel visits, register new patients, verify identity, answer hours / insurance / policy questions, send refill requests, hand off to staff — and send anyone describing an emergency to 112 / 108 (Tele-MANAS 14416 for a mental-health crisis). Every tool call passes one policy door (identity required, 3-strike lockout, read-back-before-booking, emergency lock, no controlled-substance refills), and the browser shows a live visit card plus a log of what she did.
-
-```bash
-uv sync
-cp .env.example .env                                     # GOOGLE_API_KEY (AI Studio key)
-uv run uvicorn front_desk.server:app --port 8000         # open http://localhost:8000
-uv run pytest                                            # 38 unit tests
-uv run python -m front_desk.smoke_live --audio           # 8 live end-to-end scenarios
 ```
-
-Details, the rules, the wire protocol and the known limits (read them before real patients): **[`front_desk/README.md`](front_desk/README.md)**.
-
-The three DJ builds below are the learning path it was built from — same browser loop, same barge-in, same policy-door pattern.
-
-## Three builds, one app
-
-| Folder | Episode | What's inside |
-|---|---|---|
-| [`genai_sdk/`](genai_sdk/) | **EP1** — raw `google-genai` SDK | The whole primitive with no framework: a **39-line** `raw_minimal.py`, the full `raw_server.py`, and the gotcha that makes voice agents go silent after one sentence. |
-| [`adk/`](adk/) | **EP2** — Google ADK | The same DJ rebuilt on `LiveRequestQueue` + `run_live` + plain-function tools — plus how to run her inside **`adk web`** and watch the tool calls land as events. |
-| [`adk_tools/`](adk_tools/) | **EP3** — abilities | A new tool she can act on mid-sentence (`set_sleep_timer`), and **one policy door** every tool call passes through — a `before_tool_callback` that observes or **blocks**, with an action log that shows the verdict live. |
-
-`frontend/` and `assets/` sit at the root because EP1 and EP2 share them **byte for byte** — that's the point. EP3 ships its own copy of the frontend (it grows an action-log panel).
+mortgage-advisor-ai-adk/
+├── pyproject.toml            # package + dependencies (uv)
+├── uv.lock
+├── README.md
+├── .python-version
+├── .env.example              # copy to .env
+├── Dockerfile
+├── compose.yaml
+├── src/
+│   ├── backend/
+│   │   └── mortgage_advisor/
+│   │       ├── __init__.py
+│   │       ├── main.py               # FastAPI app; serves src/frontend
+│   │       ├── api/
+│   │       │   ├── dependencies.py   # ADK runner, sessions, live config
+│   │       │   └── routes.py         # /healthz, /api/*, WebSocket /ws
+│   │       ├── core/
+│   │       │   ├── config.py         # paths and settings from the environment
+│   │       │   ├── logging.py
+│   │       │   └── errors.py
+│   │       ├── db/
+│   │       │   ├── models.py         # dataclasses: origination, call state, servicing
+│   │       │   ├── session.py        # SQLite connections + migrations
+│   │       │   └── repositories.py   # ServicingDatabase
+│   │       ├── services/
+│   │       │   ├── origination.py    # MortgageStore: rules, pricing, comparison, officers
+│   │       │   ├── events.py         # per-call event bus to the browser
+│   │       │   ├── usage.py          # token and cost tracking
+│   │       │   └── knowledge/        # regulation ingestion, approval and search
+│   │       └── agent/
+│   │           ├── agent.py          # ADK root_agent
+│   │           ├── tools.py          # Mac's tools
+│   │           ├── servicing_tools.py# Ivy's tools
+│   │           ├── policy.py         # policy door (before/after every tool)
+│   │           ├── persona.py        # picks the active persona's instructions
+│   │           ├── personas/         # Mac and Ivy instructions
+│   │           ├── graph.py          # persona routing (Mac <-> Ivy)
+│   │           └── observer.py       # talking-point suggestions from tool results
+│   └── frontend/                     # static web client; config.js sets the backend URL
+├── data/mortgage/            # seed data: products, rules, rate sheet, servicing loans
+├── migrations/               # SQL schema for the servicing database
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   └── conftest.py
+├── wiki/                     # requirements, architecture, reviews, deploy guide
+└── archive/                  # earlier demos this project grew from (DJ, clinic front desk)
+```
 
 ## Quick start
 
 ```bash
 uv sync
-cp .env.example .env          # paste your GOOGLE_API_KEY (Gemini Developer API / AI Studio, not Vertex)
-
-uv run uvicorn genai_sdk.raw_server:app --port 8000     # EP1 · the DJ on the raw SDK
-uv run uvicorn adk.server:app --port 8000               # EP2 · the same DJ on ADK
-uv run uvicorn adk_tools.server:app --port 8000         # EP3 · abilities + the policy gate (QUIET_HOURS=1 for the blocked take)
-uv run adk web . --port 8000                            # EP2/EP3 · the same agents inside ADK's dev UI
+cp .env.example .env          # set GOOGLE_API_KEY (AI Studio key, not Vertex)
+uv run uvicorn mortgage_advisor.main:app --reload --port 8000
 ```
 
-Open <http://localhost:8000>, **put headphones on** (otherwise she hears her own radio), tap 🎙 and talk.
+Open http://localhost:8000 and press **Call Mac**. Headphones help.
 
-Try: *"hey Mira"* · *"can you play something dream pop"* · *"skip this"* · *"what do you think of the music?"* — then **talk over her** while she's speaking.
+Run the agent in the ADK developer UI instead:
 
-## What's shared
+```bash
+uv run adk web src/backend
+```
 
-| | |
-|---|---|
-| `frontend/` | minimal browser client: 16 kHz mic worklet, 24 kHz playback, client-side barge-in, music ducking |
-| `assets/tracks/` · `assets/mira_persona.txt` | four dream-pop tracks and who Mira is |
-| `docs/` | architecture diagrams for all three builds, the product / UX / engineering design docs, the de-risk test |
+## Tests
 
-## Notes
+```bash
+uv run pytest                 # unit + integration
+uv run pytest tests/unit
+uv run pytest tests/integration
+```
 
-- **Voice** is a Gemini Live *native* voice (`LIVE_VOICE`, default `Aoede`) — the Live API has its own voice set, so it can't reproduce a TTS voice you used elsewhere. The persona carries the character, not the timbre.
-- **Barge-in** is client-side: the browser cuts playback the instant the mic hears you (RMS gate in `frontend/main.js`), which feels faster than waiting for the server signal. The server forwards `interrupted` too.
-- **Music ducking** drops the track to 12% while Mira speaks, then brings it back.
-- The four tracks and Mira's persona come from **aniradio**, a static AI-radio app of mine — the music is generated with **Lyria 3 Pro**.
+Tests write their databases to a temporary folder, never to `data/`.
 
-## Going deeper
+## Regulation knowledge
 
-A second ADK live app (NOVA — voice + camera) plus a raw-SDK-vs-ADK exercise lives in [`cuppibla/multimodal-levels`](https://github.com/cuppibla/multimodal-levels) → `05-live/`.
+```bash
+uv run python -m mortgage_advisor.services.knowledge.ingest          # fetch approved sources
+uv run python -m mortgage_advisor.services.knowledge.ingest status
+uv run python -m mortgage_advisor.services.knowledge.ingest approve <source_id>
+```
 
+Sources are listed in `src/backend/mortgage_advisor/services/knowledge/sources.yaml`. Only approved passages are searchable.
 
-                    Command                      │            Description            │
-  ├──────────────────────────────────────────────────┼───────────────────────────────────┤
-  │ uv run uvicorn mortgage.server:app --port 8000   │ Mortgage Advisor (main app)       │
-  ├──────────────────────────────────────────────────┼───────────────────────────────────┤
-  │ uv run uvicorn front_desk.server:app --port 8000 │ Healthcare front desk agent (Ava) │
-  ├──────────────────────────────────────────────────┼───────────────────────────────────┤
-  │ uv run uvicorn adk.server:app --port 8000        │ DJ agent on ADK                   │
-  ├──────────────────────────────────────────────────┼───────────────────────────────────┤
-  │ uv run adk web . --port 8000                     │ ADK's built-in dev UI             │
-  ├──────────────────────────────────────────────────┼───────────────────────────────────┤
-  │ uv run pytest                                    │ Run tests                         │
-  └──────────────────────────────────────────────────┴───────────────────────────────────┘
+## Container
+
+```bash
+docker compose up --build     # http://localhost:8080
+```
+
+The image runs `uvicorn mortgage_advisor.main:app` on `$PORT` (8080 by default), as Cloud Run expects. Runtime databases live in a named volume.
+
+## Deploy to Google Cloud (free tier)
+
+Backend on Cloud Run, frontend on Firebase Hosting: see [wiki/deploy-gcp.md](wiki/deploy-gcp.md).
+When the frontend is hosted separately, set `backendUrl` in `src/frontend/config.js` and
+`ALLOWED_ORIGINS` on the backend.
+
+## Configuration
+
+All settings come from environment variables; see `.env.example`. Paths for data, frontend, migrations and databases can be overridden with `MORTGAGE_*` variables.
+
+## Data
+
+`data/mortgage/` holds sample seed data for a fictional lender (HomeFirst AI Lending): products, Texas/California/Florida rules, a sample rate sheet, loan officers and demo customers. Rates and market benchmarks are illustrative only.

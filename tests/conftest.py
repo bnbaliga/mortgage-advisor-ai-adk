@@ -1,31 +1,13 @@
-import asyncio
-from datetime import datetime
-from types import SimpleNamespace
+"""Shared test setup.
 
-import pytest
+Runtime databases go to a temporary folder so tests never touch data/mortgage/.
+This runs before any test module imports mortgage_advisor (config reads the
+environment once, at import).
+"""
+import os
+import tempfile
 
-from front_desk import tools
-from front_desk.clinic import ClinicStore
-
-# Monday 2026-10-05, 09:00 — every test runs on the same frozen morning.
-NOW = datetime(2026, 10, 5, 9, 0)
-
-
-@pytest.fixture
-def store():
-    s = ClinicStore.load(clock=lambda: NOW)
-    tools.use_store(s)
-    return s
-
-
-@pytest.fixture
-def ctx():
-    return SimpleNamespace(session=SimpleNamespace(id="call-1"))
-
-
-def run(coro):
-    return asyncio.run(coro)
-
-
-def tool(name):
-    return SimpleNamespace(name=name)
+_TMP = tempfile.mkdtemp(prefix="mortgage-tests-")
+os.environ.setdefault("MORTGAGE_SERVICING_DB", os.path.join(_TMP, "servicing.db"))
+os.environ.setdefault("MORTGAGE_KNOWLEDGE_DB", os.path.join(_TMP, "passages.db"))
+os.environ.setdefault("MORTGAGE_GREETING", "0")
