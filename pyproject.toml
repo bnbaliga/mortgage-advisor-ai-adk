@@ -22,7 +22,7 @@ dependencies = [
 package = true
 
 [tool.setuptools.packages.find]
-include = ["mortgage*", "front_desk*", "adk*", "adk_tools*", "genai_sdk*"]
+include = ["mortgage*"]
 exclude = ["tests*", "wiki*", "assets*", "frontend*", "docs*"]
 
 [dependency-groups]
