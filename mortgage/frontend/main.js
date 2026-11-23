@@ -22,7 +22,20 @@ const statusIndicator = $("status-indicator");
 const statusDot = $("status-dot");
 const statusMessage = $("status-message");
 const orb = $("orb");
-const music = $("music");
+const usagePanel = $("usage-panel");
+const usageInput = $("usage-input");
+const usageOutput = $("usage-output");
+const usageTotal = $("usage-total");
+const usageTotalBig = $("usage-total-big");
+const usageCost = $("usage-cost");
+const usageInAudio = $("usage-in-audio");
+const usageInText = $("usage-in-text");
+const usageOutAudio = $("usage-out-audio");
+const usageOutText = $("usage-out-text");
+const usageTurns = $("usage-turns");
+const usageContext = $("usage-context");
+const usageContextLimit = $("usage-context-limit");
+const usageContextBar = $("usage-context-bar");
 
 // State
 const BARGE_RMS = 0.02;
@@ -30,10 +43,6 @@ let ws, audioCtx, workletNode, micStream;
 let nextStart = 0;
 let activeSources = [];
 let speaking = false;
-let duckTimer = null;
-let tracks = [];
-let queue = [];
-let qi = 0;
 let callStartTime = null;
 let durationInterval = null;
 let isConnected = false;
@@ -68,6 +77,7 @@ function showSession(active) {
   sessionEmpty.style.display = active ? "none" : "block";
   sessionActive.style.display = active ? "flex" : "none";
   transcriptPanel.style.display = active ? "block" : "none";
+  usagePanel.style.display = active ? "block" : "none";
   statusIndicator.style.display = active ? "flex" : "none";
   liveIndicator.style.display = active ? "inline-flex" : "none";
   sessionCount.textContent = active ? "(1)" : "(0)";
@@ -80,7 +90,60 @@ function showSession(active) {
     sessionIcon.classList.add("active");
   } else {
     sessionIcon.classList.remove("active");
+    // Reset usage display
+    usageInput.textContent = "0";
+    usageOutput.textContent = "0";
+    usageTotal.textContent = "(0)";
+    usageTotalBig.textContent = "0";
+    usageCost.textContent = "$0.0000";
+    usageCost.style.background = "#dcfce7";
+    usageCost.style.color = "#059669";
+    usageInAudio.textContent = "0";
+    usageInText.textContent = "0";
+    usageOutAudio.textContent = "0";
+    usageOutText.textContent = "0";
+    usageTurns.textContent = "0";
+    usageContext.textContent = "0";
+    usageContextBar.style.width = "0%";
   }
+}
+
+function updateUsage(data) {
+  const fmt = (n) => (n || 0).toLocaleString();
+
+  // Main totals
+  usageInput.textContent = fmt(data.input);
+  usageOutput.textContent = fmt(data.output);
+  usageTotal.textContent = `(${fmt(data.total)})`;
+  usageTotalBig.textContent = fmt(data.total);
+
+  // Modality breakdown
+  const by = data.by_modality || {};
+  usageInAudio.textContent = fmt(by["in:AUDIO"]);
+  usageInText.textContent = fmt(by["in:TEXT"]);
+  usageOutAudio.textContent = fmt(by["out:AUDIO"]);
+  usageOutText.textContent = fmt(by["out:TEXT"]);
+
+  // Model turns
+  usageTurns.textContent = fmt(data.reports);
+
+  // Cost
+  if (data.cost_usd !== undefined && data.cost_usd !== null) {
+    usageCost.textContent = `$${data.cost_usd.toFixed(4)}`;
+  } else {
+    usageCost.textContent = "set prices in .env";
+    usageCost.style.background = "#f3f4f6";
+    usageCost.style.color = "#6b7280";
+  }
+
+  // Context memory bar
+  const context = data.context || 0;
+  const limit = data.context_limit || 100000;
+  usageContext.textContent = fmt(context);
+  usageContextLimit.textContent = fmt(limit);
+  const pct = Math.min(100, (context / limit) * 100);
+  usageContextBar.style.width = `${pct}%`;
+  usageContextBar.style.background = pct > 80 ? "var(--danger)" : "var(--primary)";
 }
 
 function updateAgent(agent) {
@@ -185,48 +248,6 @@ function clearTranscript() {
   transcriptBody.innerHTML = '<div class="transcript-empty">Conversation will appear here...</div>';
 }
 
-// --- Music Player (driven by tool calls) ---
-
-async function loadTracks() {
-  try {
-    tracks = await (await fetch("/assets/tracks.json")).json();
-  } catch {
-    tracks = [];
-  }
-}
-
-function startQueue(list) {
-  queue = list.length ? list : tracks;
-  qi = 0;
-  if (queue.length) {
-    music.src = "/assets/" + queue[0].file;
-    music.volume = 1;
-    music.play().catch(() => {});
-  }
-}
-
-function handlePlay(cmd) {
-  if (cmd.action === "playlist") {
-    startQueue(tracks);
-  } else if (cmd.action === "track") {
-    const t = tracks.find((x) => x.title.toLowerCase().includes((cmd.value || "").toLowerCase()));
-    startQueue(t ? [t] : tracks);
-  } else if (cmd.action === "skip") {
-    qi = (qi + 1) % Math.max(1, queue.length);
-    if (queue[qi]) {
-      music.src = "/assets/" + queue[qi].file;
-      music.play().catch(() => {});
-    }
-  } else if (cmd.action === "pause") {
-    music.paused ? music.play().catch(() => {}) : music.pause();
-  }
-}
-
-function duck() {
-  music.volume = 0.12;
-  if (duckTimer) clearTimeout(duckTimer);
-  duckTimer = setTimeout(() => { music.volume = 1; }, 450);
-}
 
 // --- Voice Playback (24k PCM from server) ---
 
@@ -260,7 +281,6 @@ function playVoice(buf) {
 
   speaking = true;
   setOrbState("speaking");
-  duck();
 }
 
 function stopVoice() {
@@ -328,10 +348,10 @@ function connect() {
       updateAgent(m.agent);
     } else if (m.type === "verification_change") {
       updateVerification(m.level);
-    } else if (m.type === "play") {
-      handlePlay(m);
     } else if (m.type === "interrupted") {
       stopVoice();
+    } else if (m.type === "usage") {
+      updateUsage(m);
     } else if (m.type === "error") {
       setStatus("Error: " + m.message);
       console.error(m.message);
@@ -380,7 +400,6 @@ async function startCall() {
   setOrbState("thinking");
 
   try {
-    await loadTracks();
     await startMic();
     connect();
   } catch (err) {
