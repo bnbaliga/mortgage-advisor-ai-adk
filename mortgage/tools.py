@@ -8,12 +8,16 @@ Same pattern as the front desk tools:
 
 Who may call what is decided in `policy.py`, the one door every call walks through.
 """
-from typing import Optional
 
 from google.adk.tools.tool_context import ToolContext
 
 from mortgage.mortgage import (
-    IdentityStrength, MortgageError, MortgageStore, format_currency, format_rate, spoken_time
+    IdentityStrength,
+    MortgageError,
+    MortgageStore,
+    format_currency,
+    format_rate,
+    spoken_time,
 )
 
 store = MortgageStore.load()
@@ -29,11 +33,12 @@ def _err(e: MortgageError) -> dict:
     return {"result": "error", "code": e.code, "message": e.message}
 
 
-def _caller(tool_context: ToolContext) -> Optional[str]:
+def _caller(tool_context: ToolContext) -> str | None:
     return store.call(tool_context.session.id).verified_customer_id
 
 
 # ------------------------------------------------------------- company info ---
+
 
 async def get_company_info(topic: str) -> dict:
     """Look up company information: hours, contact, products, rates, or general info.
@@ -56,7 +61,7 @@ async def get_company_info(topic: str) -> dict:
         "products": products_list,
         "value_proposition": c.get("value_proposition", ""),
         "nmls": c.get("nmls_id", ""),
-        "disclaimers": c.get("disclaimers", {})
+        "disclaimers": c.get("disclaimers", {}),
     }
 
     key = (topic or "all").strip().lower().replace(" ", "_")
@@ -85,30 +90,39 @@ async def get_mortgage_products(product_type: str = "") -> dict:
                     "min_credit_score": product.get("min_credit_score", "varies"),
                     "max_ltv": product.get("max_ltv", "varies"),
                     "property_types": product.get("property_types", []),
-                    "notes": product.get("notes", "")
-                }
+                    "notes": product.get("notes", ""),
+                },
             }
-        return {"result": "error", "code": "unknown_product",
-                "message": f"I don't have information about '{product_type}'. Our products include: " +
-                          ", ".join(store.products.keys())}
+        return {
+            "result": "error",
+            "code": "unknown_product",
+            "message": f"I don't have information about '{product_type}'. Our products include: "
+            + ", ".join(store.products.keys()),
+        }
 
     # Return summary of all products
     products = []
     for key, p in store.products.items():
-        products.append({
-            "id": key,
-            "name": p["name"],
-            "rate_range": f"{format_rate(p['rate_range'][0])} to {format_rate(p['rate_range'][1])}"
-        })
+        products.append(
+            {
+                "id": key,
+                "name": p["name"],
+                "rate_range": f"{format_rate(p['rate_range'][0])} to {format_rate(p['rate_range'][1])}",
+            }
+        )
     return {"result": "ok", "products": products}
 
 
 # ------------------------------------------------------------- eligibility checks ---
 
-async def check_heloc_eligibility(state: str, property_type: str,
-                                   has_existing_cashout: bool = False,
-                                   property_value: float = 0,
-                                   current_mortgage_balance: float = 0) -> dict:
+
+async def check_heloc_eligibility(
+    state: str,
+    property_type: str,
+    has_existing_cashout: bool = False,
+    property_value: float = 0,
+    current_mortgage_balance: float = 0,
+) -> dict:
     """Check if a HELOC is allowed based on state regulations and property details.
 
     Args:
@@ -121,10 +135,10 @@ async def check_heloc_eligibility(state: str, property_type: str,
         current_mortgage_balance: current mortgage balance in dollars (optional).
     """
     from mortgage.mortgage import MortgageError
+
     try:
         result = store.check_heloc_eligibility(
-            state, property_type, has_existing_cashout,
-            property_value, current_mortgage_balance
+            state, property_type, has_existing_cashout, property_value, current_mortgage_balance
         )
     except MortgageError as e:
         return _err(e)
@@ -136,7 +150,7 @@ async def check_heloc_eligibility(state: str, property_type: str,
             "eligible": None,
             "state": result["state"],
             "status": "needs_review",
-            "say": result["say"]
+            "say": result["say"],
         }
 
     if result["eligible"]:
@@ -154,7 +168,7 @@ async def check_heloc_eligibility(state: str, property_type: str,
             "state": result["state"],
             "issues": result["issues"],
             "alternatives": result["alternatives"],
-            "say": "Explain the restrictions kindly and present the alternatives."
+            "say": "Explain the restrictions kindly and present the alternatives.",
         }
 
 
@@ -166,6 +180,7 @@ async def check_state_regulations(state: str, product_type: str = "heloc") -> di
         product_type: "heloc" or "cashout" for specific rules.
     """
     from mortgage.mortgage import MortgageError
+
     try:
         state_code, rules = store.get_state_rules(state, product_type)
     except MortgageError as e:
@@ -176,14 +191,15 @@ async def check_state_regulations(state: str, product_type: str = "heloc") -> di
             "result": "ok",
             "state": state_code,
             "status": "needs_review",
-            "say": "Explain you don't have specific regulations on file for that state and offer to connect them with a licensed loan officer who can provide accurate guidance."
+            "say": "Explain you don't have specific regulations on file for that state and offer to connect them with a licensed loan officer who can provide accurate guidance.",
         }
 
     return {"result": "ok", "state": state_code, "rules": rules}
 
 
-async def get_rate_estimate(product_type: str, credit_score: int = 720,
-                            loan_to_value: float = 80) -> dict:
+async def get_rate_estimate(
+    product_type: str, credit_score: int = 720, loan_to_value: float = 80
+) -> dict:
     """Get an estimated rate for a mortgage product.
 
     Args:
@@ -199,13 +215,14 @@ async def get_rate_estimate(product_type: str, credit_score: int = 720,
             "estimated_rate": format_rate(estimate["estimated_rate"]),
             "range": estimate["rate_range"],
             "disclaimer": estimate["disclaimer"],
-            "say": "Give them the estimated rate and mention this is an estimate that depends on full application review."
+            "say": "Give them the estimated rate and mention this is an estimate that depends on full application review.",
         }
     except MortgageError as e:
         return _err(e)
 
 
 # ------------------------------------------------------------- customer verification ---
+
 
 async def verify_customer(full_name: str, phone_last_4: str, tool_context: ToolContext) -> dict:
     """Verify an existing customer's identity. Use when they say they've worked with us before.
@@ -220,9 +237,16 @@ async def verify_customer(full_name: str, phone_last_4: str, tool_context: ToolC
     if not customer:
         call.failed_verifications += 1
         left = max(0, 3 - call.failed_verifications)
-        return {"result": "error", "code": "no_match", "attempts_left": left,
-                "message": ("I couldn't find that in our system. They may be a new customer. "
-                           if left else "Unable to verify. Offer to connect them with a loan officer.")}
+        return {
+            "result": "error",
+            "code": "no_match",
+            "attempts_left": left,
+            "message": (
+                "I couldn't find that in our system. They may be a new customer. "
+                if left
+                else "Unable to verify. Offer to connect them with a loan officer."
+            ),
+        }
 
     call.verified_customer_id = customer.id
     call.failed_verifications = 0
@@ -231,14 +255,16 @@ async def verify_customer(full_name: str, phone_last_4: str, tool_context: ToolC
     # Summarize their properties
     props_summary = []
     for p in customer.properties:
-        props_summary.append({
-            "type": p.property_type,
-            "state": p.address.split(",")[-1].strip().split()[0] if "," in p.address else "",
-            "value": format_currency(p.estimated_value),
-            "equity": format_currency(p.equity),
-            "has_mortgage": p.mortgage_balance > 0,
-            "mortgage_type": p.mortgage_type
-        })
+        props_summary.append(
+            {
+                "type": p.property_type,
+                "state": p.address.split(",")[-1].strip().split()[0] if "," in p.address else "",
+                "value": format_currency(p.estimated_value),
+                "equity": format_currency(p.equity),
+                "has_mortgage": p.mortgage_balance > 0,
+                "mortgage_type": p.mortgage_type,
+            }
+        )
 
     return {
         "result": "ok",
@@ -246,12 +272,18 @@ async def verify_customer(full_name: str, phone_last_4: str, tool_context: ToolC
         "first_name": customer.first_name,
         "properties_count": len(customer.properties),
         "properties": props_summary,
-        "credit_range": customer.credit_score_range
+        "credit_range": customer.credit_score_range,
     }
 
 
-async def register_lead(full_name: str, phone: str, inquiry_type: str,
-                        property_state: str, summary: str, tool_context: ToolContext) -> dict:
+async def register_lead(
+    full_name: str,
+    phone: str,
+    inquiry_type: str,
+    property_state: str,
+    summary: str,
+    tool_context: ToolContext,
+) -> dict:
     """Register a new lead for follow-up by a loan officer.
 
     Args:
@@ -270,7 +302,7 @@ async def register_lead(full_name: str, phone: str, inquiry_type: str,
         "refinance": "conventional",
         "cash_out": "cash_out_refi",
         "va": "va",
-        "fha": "fha"
+        "fha": "fha",
     }
     specialty = specialty_map.get(inquiry_type.lower(), "")
     officers = store.get_available_officers(specialty)
@@ -285,14 +317,16 @@ async def register_lead(full_name: str, phone: str, inquiry_type: str,
         "result": "ok",
         "lead_created": True,
         "assigned_to": officer_name,
-        "say": f"Let them know {officer_name} will reach out within one business day."
+        "say": f"Let them know {officer_name} will reach out within one business day.",
     }
 
 
 # ------------------------------------------------------------- loan officer transfer ---
 
-async def transfer_to_loan_officer(reason: str, specialty: str = "",
-                                    tool_context: ToolContext = None) -> dict:
+
+async def transfer_to_loan_officer(
+    reason: str, specialty: str = "", tool_context: ToolContext = None
+) -> dict:
     """Transfer the caller to a licensed loan officer for detailed assistance.
 
     Args:
@@ -305,9 +339,10 @@ async def transfer_to_loan_officer(reason: str, specialty: str = "",
     officers = store.get_available_officers(specialty)
 
     transfer = store.create_transfer(
-        reason, customer_id,
+        reason,
+        customer_id,
         specialty_requested=specialty,
-        available_officers=[o.name for o in officers]
+        available_officers=[o.name for o in officers],
     )
 
     if officers:
@@ -318,18 +353,19 @@ async def transfer_to_loan_officer(reason: str, specialty: str = "",
             "connecting_to": officer.name,
             "title": officer.title,
             "nmls": officer.nmls_id,
-            "say": f"Let them know you're connecting them with {officer.name}, a licensed loan officer who can help with their specific situation."
+            "say": f"Let them know you're connecting them with {officer.name}, a licensed loan officer who can help with their specific situation.",
         }
     else:
         return {
             "result": "ok",
             "transfer_id": transfer.id,
             "connecting_to": "loan officer team",
-            "say": "Let them know a loan officer will call them back within one business hour."
+            "say": "Let them know a loan officer will call them back within one business hour.",
         }
 
 
 # ------------------------------------------------------------- FAQ and general info ---
+
 
 async def answer_faq(question: str) -> dict:
     """Look up common mortgage questions.
@@ -353,13 +389,13 @@ async def answer_faq(question: str) -> dict:
         if prod_key in key or product["name"].lower() in question.lower():
             return {
                 "result": "ok",
-                "answer": f"{product['name']}: {product['description']}. Current rates range from {format_rate(product['rate_range'][0])} to {format_rate(product['rate_range'][1])}."
+                "answer": f"{product['name']}: {product['description']}. Current rates range from {format_rate(product['rate_range'][0])} to {format_rate(product['rate_range'][1])}.",
             }
 
     return {
         "result": "ok",
         "answer": None,
-        "say": "I don't have that specific information. Offer to connect them with a loan officer who can answer in detail."
+        "say": "I don't have that specific information. Offer to connect them with a loan officer who can answer in detail.",
     }
 
 
@@ -385,11 +421,12 @@ async def calculate_equity(property_value: float, mortgage_balance: float) -> di
         "current_ltv": f"{current_ltv:.1f}%",
         "max_heloc_80_cltv": format_currency(max(0, max_cltv_80)),
         "max_heloc_85_cltv": format_currency(max(0, max_cltv_85)),
-        "say": "Tell them their equity amount and what they could potentially borrow. Remind them final amounts depend on full application review."
+        "say": "Tell them their equity amount and what they could potentially borrow. Remind them final amounts depend on full application review.",
     }
 
 
 # ------------------------------------------------------------- regulation search ---
+
 
 async def search_regulations(question: str, state: str = "") -> dict:
     """Search approved regulatory documents for information about mortgage rules.
@@ -410,30 +447,36 @@ async def search_regulations(question: str, state: str = "") -> dict:
             "result": "error",
             "code": "search_failed",
             "message": f"Regulation search unavailable: {e}",
-            "say": "Let them know you couldn't search regulations right now and offer to connect with a loan officer."
+            "say": "Let them know you couldn't search regulations right now and offer to connect with a loan officer.",
         }
 
     if not passages:
         return {
             "result": "ok",
             "passages": [],
-            "say": "No matching regulations found. Answer based on your training if confident, otherwise offer to connect with a loan officer."
+            "say": "No matching regulations found. Answer based on your training if confident, otherwise offer to connect with a loan officer.",
         }
 
     return {
         "result": "ok",
         "passages": [p.to_dict() for p in passages],
-        "say": "Answer only from these passages, mention the source briefly, and offer a loan officer if they don't answer the question."
+        "say": "Answer only from these passages, mention the source briefly, and offer a loan officer if they don't answer the question.",
     }
 
 
 # ------------------------------------------------------------- option comparison ---
 
-async def compare_options(state: str, property_value: float, current_mortgage_balance: float,
-                          credit_score: int = 720, cash_needed: float = 0,
-                          property_use: str = "primary",
-                          has_existing_cashout: bool = False,
-                          last_cashout_date: str = "") -> dict:
+
+async def compare_options(
+    state: str,
+    property_value: float,
+    current_mortgage_balance: float,
+    credit_score: int = 720,
+    cash_needed: float = 0,
+    property_use: str = "primary",
+    has_existing_cashout: bool = False,
+    last_cashout_date: str = "",
+) -> dict:
     """Compare eligible mortgage options (HELOC, cash-out refi, rate/term refi).
 
     Shows side-by-side comparison with rates, monthly payments, and potential savings
@@ -462,7 +505,7 @@ async def compare_options(state: str, property_value: float, current_mortgage_ba
             property_use=property_use,
             has_existing_cashout=has_existing_cashout,
             last_cashout_date=last_cashout_date,
-            cash_needed=cash_needed
+            cash_needed=cash_needed,
         )
     except MortgageError as e:
         return _err(e)
@@ -477,7 +520,7 @@ async def compare_options(state: str, property_value: float, current_mortgage_ba
             "rate": format_rate(opt["rate"]),
             "amount": format_currency(opt["amount"]),
             "monthly_payment": format_currency(opt["monthly_payment"]),
-            "payment_type": opt["payment_type"]
+            "payment_type": opt["payment_type"],
         }
         if "term_years" in opt:
             formatted["term_years"] = opt["term_years"]
@@ -499,7 +542,7 @@ async def compare_options(state: str, property_value: float, current_mortgage_ba
         "equity": format_currency(result["equity"]),
         "current_ltv": f"{result['current_ltv']:.1f}%",
         "options": formatted_options,
-        "disclaimer": result["disclaimer"]
+        "disclaimer": result["disclaimer"],
     }
 
     # Include excluded options with reasons
@@ -536,10 +579,9 @@ async def compare_options(state: str, property_value: float, current_mortgage_ba
 
 # ------------------------------------------------------------- strong verification ---
 
+
 async def verify_customer_strong(
-    date_of_birth: str,
-    approximate_loan_balance: float,
-    tool_context: ToolContext
+    date_of_birth: str, approximate_loan_balance: float, tool_context: ToolContext
 ) -> dict:
     """Strong identity verification for sensitive servicing operations.
 
@@ -560,7 +602,7 @@ async def verify_customer_strong(
         return {
             "result": "error",
             "code": "not_verified",
-            "say": "You need to verify their identity first. Ask for their name and phone last 4 digits."
+            "say": "You need to verify their identity first. Ask for their name and phone last 4 digits.",
         }
 
     # Already strongly verified
@@ -569,15 +611,20 @@ async def verify_customer_strong(
             "result": "ok",
             "already_verified": True,
             "identity_strength": "strong",
-            "say": "Their identity is already verified at the strong level. Proceed with their request."
+            "say": "Their identity is already verified at the strong level. Proceed with their request.",
         }
 
     customer = store.customers.get(call.verified_customer_id)
     if not customer:
-        return {"result": "error", "code": "customer_not_found", "say": "Customer record not found."}
+        return {
+            "result": "error",
+            "code": "customer_not_found",
+            "say": "Customer record not found.",
+        }
 
     # Get loan balance from servicing database
     from mortgage.database import get_servicing_db
+
     db = get_servicing_db()
     loan = db.get_loan_by_customer(call.verified_customer_id)
 
@@ -585,7 +632,7 @@ async def verify_customer_strong(
         return {
             "result": "error",
             "code": "no_loan",
-            "say": "No active loan found for this customer. They may need to speak with a loan officer."
+            "say": "No active loan found for this customer. They may need to speak with a loan officer.",
         }
 
     # Verify approximate balance (within $5,000)
@@ -600,8 +647,9 @@ async def verify_customer_strong(
             "code": "verification_failed",
             "attempts_left": left,
             "message": "The information provided doesn't match our records.",
-            "say": "Let them know the information didn't match. Ask them to double-check and try again." if left > 0 else
-                   "For their security, offer to connect them with a loan officer to verify their identity."
+            "say": "Let them know the information didn't match. Ask them to double-check and try again."
+            if left > 0
+            else "For their security, offer to connect them with a loan officer to verify their identity.",
         }
 
     # Strong verification successful
@@ -615,17 +663,14 @@ async def verify_customer_strong(
         "identity_strength": "strong",
         "first_name": customer.first_name,
         "loan_id": loan.id,
-        "say": f"Thank {customer.first_name} for verifying. You can now help with payment changes, autopay setup, or processing payments."
+        "say": f"Thank {customer.first_name} for verifying. You can now help with payment changes, autopay setup, or processing payments.",
     }
 
 
 # ------------------------------------------------------------- specialist transfer ---
 
-async def transfer_to_specialist(
-    specialist: str,
-    reason: str,
-    tool_context: ToolContext
-) -> dict:
+
+async def transfer_to_specialist(specialist: str, reason: str, tool_context: ToolContext) -> dict:
     """Transfer the caller to a specialist agent (Mac or Ivy).
 
     Use this tool when you've determined which specialist can best help the caller:
@@ -662,31 +707,23 @@ async def transfer_to_specialist(
             "result": "error",
             "code": "invalid_specialist",
             "message": f"Unknown specialist '{specialist}'. Use 'origination' for Mac (new loans) or 'servicing' for Ivy (existing loans).",
-            "say": "I can transfer you to Mac for new loan questions or Ivy for existing loan questions. Which would be more helpful?"
+            "say": "I can transfer you to Mac for new loan questions or Ivy for existing loan questions. Which would be more helpful?",
         }
 
     # Update the call state to switch agents
     call.active_agent = target_agent
 
     # Publish agent change event to frontend
-    events.publish(tool_context.session.id, {
-        "type": "agent_change",
-        "agent": target_agent,
-        "from_agent": old_agent,
-        "reason": reason
-    })
+    events.publish(
+        tool_context.session.id,
+        {"type": "agent_change", "agent": target_agent, "from_agent": old_agent, "reason": reason},
+    )
 
     # Get the specialist's name for the response
-    specialist_names = {
-        "origination": "Mac",
-        "servicing": "Ivy"
-    }
+    specialist_names = {"origination": "Mac", "servicing": "Ivy"}
     specialist_name = specialist_names[target_agent]
 
-    specialist_roles = {
-        "origination": "Loan Officer",
-        "servicing": "Servicing Specialist"
-    }
+    specialist_roles = {"origination": "Loan Officer", "servicing": "Servicing Specialist"}
     specialist_role = specialist_roles[target_agent]
 
     return {
@@ -698,7 +735,7 @@ async def transfer_to_specialist(
         "specialist_role": specialist_role,
         "reason": reason,
         "say": f"The transfer is complete. You are now {specialist_name}, the {specialist_role}. "
-               f"Greet the caller warmly and help them with: {reason}"
+        f"Greet the caller warmly and help them with: {reason}",
     }
 
 

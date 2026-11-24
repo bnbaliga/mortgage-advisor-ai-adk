@@ -2,6 +2,7 @@
 
 ADK surfaces the Live API's `usage_metadata` on run_live events.
 """
+
 import os
 from dataclasses import dataclass, field
 
@@ -16,8 +17,12 @@ def _price(name: str):
         return None
 
 
-PRICES = {("in", "TEXT"): _price("TOKEN_PRICE_IN_TEXT"), ("in", "AUDIO"): _price("TOKEN_PRICE_IN_AUDIO"),
-          ("out", "TEXT"): _price("TOKEN_PRICE_OUT_TEXT"), ("out", "AUDIO"): _price("TOKEN_PRICE_OUT_AUDIO")}
+PRICES = {
+    ("in", "TEXT"): _price("TOKEN_PRICE_IN_TEXT"),
+    ("in", "AUDIO"): _price("TOKEN_PRICE_IN_AUDIO"),
+    ("out", "TEXT"): _price("TOKEN_PRICE_OUT_TEXT"),
+    ("out", "AUDIO"): _price("TOKEN_PRICE_OUT_AUDIO"),
+}
 
 
 def _modality(d) -> str:
@@ -45,10 +50,14 @@ class Usage:
         self.thoughts += g("thoughts_token_count")
         self.tool_prompt += g("tool_use_prompt_token_count")
         self.cached += g("cached_content_token_count")
-        self.total += g("total_token_count") or (g("prompt_token_count") + g("candidates_token_count"))
+        self.total += g("total_token_count") or (
+            g("prompt_token_count") + g("candidates_token_count")
+        )
         self.context = g("prompt_token_count") or self.context
-        for side, details in (("in", getattr(um, "prompt_tokens_details", None)),
-                              ("out", getattr(um, "candidates_tokens_details", None))):
+        for side, details in (
+            ("in", getattr(um, "prompt_tokens_details", None)),
+            ("out", getattr(um, "candidates_tokens_details", None)),
+        ):
             for d in details or []:
                 key = f"{side}:{_modality(d)}"
                 self.by[key] = self.by.get(key, 0) + (getattr(d, "token_count", None) or 0)
@@ -71,10 +80,19 @@ class Usage:
         return round(total, 6)
 
     def snapshot(self) -> dict:
-        return {"reports": self.reports, "input": self.input, "output": self.output, "total": self.total,
-                "thoughts": self.thoughts, "tool_prompt": self.tool_prompt, "cached": self.cached,
-                "context": self.context, "context_limit": COMPRESSION_TRIGGER,
-                "by_modality": dict(sorted(self.by.items())), "cost_usd": self.cost_usd()}
+        return {
+            "reports": self.reports,
+            "input": self.input,
+            "output": self.output,
+            "total": self.total,
+            "thoughts": self.thoughts,
+            "tool_prompt": self.tool_prompt,
+            "cached": self.cached,
+            "context": self.context,
+            "context_limit": COMPRESSION_TRIGGER,
+            "by_modality": dict(sorted(self.by.items())),
+            "cost_usd": self.cost_usd(),
+        }
 
 
 class ServerTotals:
@@ -88,7 +106,8 @@ class ServerTotals:
 
     def snapshot(self) -> dict:
         s = self.usage.snapshot()
-        s.pop("context"); s.pop("context_limit")
+        s.pop("context")
+        s.pop("context_limit")
         return {"calls": self.calls, **s}
 
 

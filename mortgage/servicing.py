@@ -10,17 +10,18 @@ These dataclasses represent the servicing lifecycle after origination:
 All data is stored in SQLite via database.py. No network: the voice agent's
 tools are thin wrappers over `ServicingDatabase`.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Optional
 
 
 class PaymentStatus(Enum):
     """Status of a scheduled payment."""
+
     SCHEDULED = "scheduled"
     PENDING = "pending"
     COMPLETED = "completed"
@@ -31,6 +32,7 @@ class PaymentStatus(Enum):
 
 class PaymentMethodType(Enum):
     """Type of payment method."""
+
     CHECKING = "checking"
     SAVINGS = "savings"
     DEBIT_CARD = "debit_card"
@@ -39,15 +41,17 @@ class PaymentMethodType(Enum):
 
 class DelinquencyStage(Enum):
     """Collections stage based on days past due."""
-    CURRENT = "current"           # 0 DPD
-    EARLY = "early"               # 1-29 DPD - reminders
-    MODERATE = "moderate"         # 30-59 DPD - outreach
-    SERIOUS = "serious"           # 60-89 DPD - collections
-    SEVERE = "severe"             # 90+ DPD - loss mitigation
+
+    CURRENT = "current"  # 0 DPD
+    EARLY = "early"  # 1-29 DPD - reminders
+    MODERATE = "moderate"  # 30-59 DPD - outreach
+    SERIOUS = "serious"  # 60-89 DPD - collections
+    SEVERE = "severe"  # 90+ DPD - loss mitigation
 
 
 class LossMitigationStatus(Enum):
     """Status of loss mitigation request."""
+
     NONE = "none"
     REQUESTED = "requested"
     IN_REVIEW = "in_review"
@@ -62,16 +66,17 @@ class PaymentMethod:
 
     Card numbers are NEVER stored - only tokens from secure capture.
     """
+
     id: str
     customer_id: str
     method_type: PaymentMethodType
-    last_four: str              # Last 4 digits for display
-    institution_name: str       # Bank name or card network
-    nickname: Optional[str]     # Customer-assigned nickname
+    last_four: str  # Last 4 digits for display
+    institution_name: str  # Bank name or card network
+    nickname: str | None  # Customer-assigned nickname
     is_default: bool = False
-    is_autopay: bool = False    # Used for autopay
-    token: str = ""             # Secure payment token (mock)
-    expiration_date: Optional[str] = None  # MM/YY for cards
+    is_autopay: bool = False  # Used for autopay
+    token: str = ""  # Secure payment token (mock)
+    expiration_date: str | None = None  # MM/YY for cards
     created_at: datetime = field(default_factory=datetime.now)
 
     def display_name(self) -> str:
@@ -85,18 +90,19 @@ class PaymentMethod:
 @dataclass
 class PaymentSchedule:
     """A scheduled payment - past, current, or future."""
+
     id: str
     loan_id: str
     due_date: date
     principal_amount: Decimal
     interest_amount: Decimal
-    escrow_amount: Decimal       # Taxes + insurance
+    escrow_amount: Decimal  # Taxes + insurance
     total_amount: Decimal
     status: PaymentStatus = PaymentStatus.SCHEDULED
-    paid_date: Optional[date] = None
-    paid_amount: Optional[Decimal] = None
-    payment_method_id: Optional[str] = None
-    confirmation_number: Optional[str] = None
+    paid_date: date | None = None
+    paid_amount: Decimal | None = None
+    payment_method_id: str | None = None
+    confirmation_number: str | None = None
 
     @property
     def is_past_due(self) -> bool:
@@ -116,6 +122,7 @@ class PaymentSchedule:
 @dataclass
 class PaymentHistory:
     """Record of a payment made."""
+
     id: str
     loan_id: str
     payment_date: date
@@ -127,25 +134,28 @@ class PaymentHistory:
     payment_method_last_four: str
     status: PaymentStatus
     confirmation_number: str
-    posted_date: Optional[date] = None
+    posted_date: date | None = None
     created_at: datetime = field(default_factory=datetime.now)
 
 
 @dataclass
 class DelinquencyStatus:
     """Delinquency and loss mitigation status for a loan."""
+
     loan_id: str
     days_past_due: int = 0
     stage: DelinquencyStage = DelinquencyStage.CURRENT
     amount_past_due: Decimal = Decimal("0.00")
     payments_missed: int = 0
-    last_payment_date: Optional[date] = None
+    last_payment_date: date | None = None
     loss_mitigation_status: LossMitigationStatus = LossMitigationStatus.NONE
-    forbearance_end_date: Optional[date] = None
-    payment_plan_id: Optional[str] = None
+    forbearance_end_date: date | None = None
+    payment_plan_id: str | None = None
 
     @classmethod
-    def from_days(cls, loan_id: str, dpd: int, amount: Decimal = Decimal("0.00")) -> "DelinquencyStatus":
+    def from_days(
+        cls, loan_id: str, dpd: int, amount: Decimal = Decimal("0.00")
+    ) -> DelinquencyStatus:
         """Create delinquency status from days past due."""
         if dpd == 0:
             stage = DelinquencyStage.CURRENT
@@ -163,7 +173,7 @@ class DelinquencyStatus:
             days_past_due=dpd,
             stage=stage,
             amount_past_due=amount,
-            payments_missed=(dpd + 29) // 30 if dpd > 0 else 0
+            payments_missed=(dpd + 29) // 30 if dpd > 0 else 0,
         )
 
 
@@ -173,6 +183,7 @@ class LoanAccount:
 
     This represents a loan after closing - the servicing phase of the lifecycle.
     """
+
     id: str
     customer_id: str
     customer_name: str
@@ -181,30 +192,30 @@ class LoanAccount:
     # Loan details
     original_amount: Decimal
     current_balance: Decimal
-    interest_rate: Decimal       # Annual rate as percentage
-    monthly_payment: Decimal     # P&I + escrow
-    loan_type: str               # conventional, fha, va, etc.
-    term_months: int             # Original term
+    interest_rate: Decimal  # Annual rate as percentage
+    monthly_payment: Decimal  # P&I + escrow
+    loan_type: str  # conventional, fha, va, etc.
+    term_months: int  # Original term
     remaining_months: int
 
     # Payment info
-    payment_day: int             # Day of month (1-28)
+    payment_day: int  # Day of month (1-28)
     next_due_date: date
-    escrow_balance: Decimal      # Escrowed taxes/insurance
+    escrow_balance: Decimal  # Escrowed taxes/insurance
 
     # Autopay
     autopay_enabled: bool = False
-    autopay_payment_method_id: Optional[str] = None
+    autopay_payment_method_id: str | None = None
 
     # Dates
     origination_date: date = field(default_factory=date.today)
-    maturity_date: Optional[date] = None
-    last_payment_date: Optional[date] = None
+    maturity_date: date | None = None
+    last_payment_date: date | None = None
 
     # Status
     is_active: bool = True
 
-    def payoff_amount(self, as_of_date: Optional[date] = None) -> Decimal:
+    def payoff_amount(self, as_of_date: date | None = None) -> Decimal:
         """Calculate payoff amount including accrued interest.
 
         Returns the amount needed to pay off the loan in full.
@@ -242,6 +253,7 @@ class LoanAccount:
 @dataclass
 class PaymentPlan:
     """Repayment plan for past-due amounts."""
+
     id: str
     loan_id: str
     start_date: date
@@ -256,16 +268,17 @@ class PaymentPlan:
 @dataclass
 class ForbearanceRequest:
     """Forbearance or hardship request."""
+
     id: str
     loan_id: str
     customer_id: str
     request_date: date
-    reason: str                  # job_loss, medical, disaster, etc.
-    requested_months: int        # Months of forbearance requested
+    reason: str  # job_loss, medical, disaster, etc.
+    requested_months: int  # Months of forbearance requested
     status: LossMitigationStatus = LossMitigationStatus.REQUESTED
-    approved_months: Optional[int] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
+    approved_months: int | None = None
+    start_date: date | None = None
+    end_date: date | None = None
     notes: str = ""
     created_at: datetime = field(default_factory=datetime.now)
 

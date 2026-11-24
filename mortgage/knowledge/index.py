@@ -10,12 +10,10 @@ Usage:
 
 from __future__ import annotations
 
-import json
 import logging
 import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 
@@ -32,12 +30,13 @@ EMBEDDING_DIM = 768
 @dataclass
 class Passage:
     """A searchable passage with metadata."""
+
     id: int
     source_id: str
     content: str
     title: str
     section: str
-    url: Optional[str]
+    url: str | None
     score: float = 0.0
 
     def to_dict(self) -> dict:
@@ -48,11 +47,11 @@ class Passage:
             "section": self.section,
             "content": self.content[:500] + "..." if len(self.content) > 500 else self.content,
             "url": self.url,
-            "relevance_score": round(self.score, 3)
+            "relevance_score": round(self.score, 3),
         }
 
 
-def get_embedding(text: str, model: str = "text-embedding-004") -> Optional[np.ndarray]:
+def get_embedding(text: str, model: str = "text-embedding-004") -> np.ndarray | None:
     """Get embedding vector for text using Gemini embedding model.
 
     Returns None if embedding fails (no API key, rate limit, etc.)
@@ -61,9 +60,7 @@ def get_embedding(text: str, model: str = "text-embedding-004") -> Optional[np.n
         import google.generativeai as genai
 
         result = genai.embed_content(
-            model=f"models/{model}",
-            content=text,
-            task_type="retrieval_document"
+            model=f"models/{model}", content=text, task_type="retrieval_document"
         )
         return np.array(result["embedding"], dtype=np.float32)
     except ImportError:
@@ -91,7 +88,7 @@ class KnowledgeIndex:
 
     def __init__(self, db_path: Path = DB_PATH):
         self.db_path = db_path
-        self._conn: Optional[sqlite3.Connection] = None
+        self._conn: sqlite3.Connection | None = None
         self._embeddings_cache: dict[int, np.ndarray] = {}
 
     @property
@@ -133,8 +130,7 @@ class KnowledgeIndex:
             return False
 
         self.conn.execute(
-            "UPDATE passages SET embedding = ? WHERE id = ?",
-            (embedding.tobytes(), passage_id)
+            "UPDATE passages SET embedding = ? WHERE id = ?", (embedding.tobytes(), passage_id)
         )
         self.conn.commit()
         self._embeddings_cache[passage_id] = embedding
@@ -182,6 +178,7 @@ class KnowledgeIndex:
         if jurisdiction:
             # Look up sources by jurisdiction
             from mortgage.knowledge.ingest import load_sources
+
             sources, _ = load_sources()
             source_ids = [s.id for s in sources if s.jurisdiction.lower() == jurisdiction.lower()]
             if source_ids:
@@ -212,15 +209,17 @@ class KnowledgeIndex:
         # Return top k
         results = []
         for score, row in scored[:k]:
-            results.append(Passage(
-                id=row[0],
-                source_id=row[1],
-                content=row[2],
-                title=row[3],
-                section=row[4],
-                url=row[5],
-                score=score
-            ))
+            results.append(
+                Passage(
+                    id=row[0],
+                    source_id=row[1],
+                    content=row[2],
+                    title=row[3],
+                    section=row[4],
+                    url=row[5],
+                    score=score,
+                )
+            )
 
         return results
 
@@ -237,6 +236,7 @@ class KnowledgeIndex:
         jurisdiction_filter = ""
         if jurisdiction:
             from mortgage.knowledge.ingest import load_sources
+
             sources, _ = load_sources()
             source_ids = [s.id for s in sources if s.jurisdiction.lower() == jurisdiction.lower()]
             if source_ids:
@@ -260,15 +260,17 @@ class KnowledgeIndex:
             # Simple scoring based on word matches
             content_lower = row[2].lower()
             score = sum(1 for w in words if w in content_lower) / len(words)
-            results.append(Passage(
-                id=row[0],
-                source_id=row[1],
-                content=row[2],
-                title=row[3],
-                section=row[4],
-                url=row[5],
-                score=score
-            ))
+            results.append(
+                Passage(
+                    id=row[0],
+                    source_id=row[1],
+                    content=row[2],
+                    title=row[3],
+                    section=row[4],
+                    url=row[5],
+                    score=score,
+                )
+            )
 
         return sorted(results, key=lambda p: p.score, reverse=True)
 
@@ -281,7 +283,7 @@ class KnowledgeIndex:
 
 
 # Module-level singleton for convenience
-_index: Optional[KnowledgeIndex] = None
+_index: KnowledgeIndex | None = None
 
 
 def get_index() -> KnowledgeIndex:

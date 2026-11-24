@@ -6,20 +6,20 @@ Data survives server restarts (unlike the in-memory origination store).
 The database is created in the project's assets directory and seeded from
 `servicing_seed.json` on first run.
 """
+
 from __future__ import annotations
 
 import json
 import logging
 import sqlite3
 import uuid
+from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Generator, Optional
 
 from mortgage.servicing import (
-    DelinquencyStage,
     DelinquencyStatus,
     ForbearanceRequest,
     LoanAccount,
@@ -106,7 +106,8 @@ class ServicingDatabase:
 
     def _insert_loan(self, conn: sqlite3.Connection, data: dict) -> None:
         """Insert a loan record."""
-        conn.execute("""
+        conn.execute(
+            """
             INSERT OR REPLACE INTO loans (
                 id, customer_id, customer_name, property_address,
                 original_amount, current_balance, interest_rate, monthly_payment,
@@ -114,78 +115,123 @@ class ServicingDatabase:
                 next_due_date, escrow_balance, autopay_enabled, autopay_payment_method_id,
                 origination_date, maturity_date, last_payment_date, is_active
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            data["id"], data["customer_id"], data["customer_name"], data["property_address"],
-            data["original_amount"], data["current_balance"], data["interest_rate"],
-            data["monthly_payment"], data["loan_type"], data["term_months"],
-            data["remaining_months"], data["payment_day"], data["next_due_date"],
-            data["escrow_balance"], data.get("autopay_enabled", False),
-            data.get("autopay_payment_method_id"),
-            data["origination_date"], data.get("maturity_date"),
-            data.get("last_payment_date"), data.get("is_active", True)
-        ))
+        """,
+            (
+                data["id"],
+                data["customer_id"],
+                data["customer_name"],
+                data["property_address"],
+                data["original_amount"],
+                data["current_balance"],
+                data["interest_rate"],
+                data["monthly_payment"],
+                data["loan_type"],
+                data["term_months"],
+                data["remaining_months"],
+                data["payment_day"],
+                data["next_due_date"],
+                data["escrow_balance"],
+                data.get("autopay_enabled", False),
+                data.get("autopay_payment_method_id"),
+                data["origination_date"],
+                data.get("maturity_date"),
+                data.get("last_payment_date"),
+                data.get("is_active", True),
+            ),
+        )
 
     def _insert_payment_method(self, conn: sqlite3.Connection, data: dict) -> None:
         """Insert a payment method record."""
-        conn.execute("""
+        conn.execute(
+            """
             INSERT OR REPLACE INTO payment_methods (
                 id, customer_id, method_type, last_four, institution_name,
                 nickname, is_default, is_autopay, token, expiration_date, created_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            data["id"], data["customer_id"], data["method_type"], data["last_four"],
-            data["institution_name"], data.get("nickname"), data.get("is_default", False),
-            data.get("is_autopay", False), data.get("token", ""),
-            data.get("expiration_date"), data.get("created_at", datetime.now().isoformat())
-        ))
+        """,
+            (
+                data["id"],
+                data["customer_id"],
+                data["method_type"],
+                data["last_four"],
+                data["institution_name"],
+                data.get("nickname"),
+                data.get("is_default", False),
+                data.get("is_autopay", False),
+                data.get("token", ""),
+                data.get("expiration_date"),
+                data.get("created_at", datetime.now().isoformat()),
+            ),
+        )
 
     def _insert_payment_history(self, conn: sqlite3.Connection, data: dict) -> None:
         """Insert a payment history record."""
-        conn.execute("""
+        conn.execute(
+            """
             INSERT OR REPLACE INTO payment_history (
                 id, loan_id, payment_date, amount, principal_applied,
                 interest_applied, escrow_applied, payment_method_id,
                 payment_method_last_four, status, confirmation_number,
                 posted_date, created_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            data["id"], data["loan_id"], data["payment_date"], data["amount"],
-            data["principal_applied"], data["interest_applied"], data["escrow_applied"],
-            data["payment_method_id"], data["payment_method_last_four"],
-            data["status"], data["confirmation_number"],
-            data.get("posted_date"), data.get("created_at", datetime.now().isoformat())
-        ))
+        """,
+            (
+                data["id"],
+                data["loan_id"],
+                data["payment_date"],
+                data["amount"],
+                data["principal_applied"],
+                data["interest_applied"],
+                data["escrow_applied"],
+                data["payment_method_id"],
+                data["payment_method_last_four"],
+                data["status"],
+                data["confirmation_number"],
+                data.get("posted_date"),
+                data.get("created_at", datetime.now().isoformat()),
+            ),
+        )
 
     def _insert_payment_schedule(self, conn: sqlite3.Connection, data: dict) -> None:
         """Insert a payment schedule record."""
-        conn.execute("""
+        conn.execute(
+            """
             INSERT OR REPLACE INTO payment_schedules (
                 id, loan_id, due_date, principal_amount, interest_amount,
                 escrow_amount, total_amount, status, paid_date, paid_amount,
                 payment_method_id, confirmation_number
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            data["id"], data["loan_id"], data["due_date"], data["principal_amount"],
-            data["interest_amount"], data["escrow_amount"], data["total_amount"],
-            data.get("status", "scheduled"), data.get("paid_date"),
-            data.get("paid_amount"), data.get("payment_method_id"),
-            data.get("confirmation_number")
-        ))
+        """,
+            (
+                data["id"],
+                data["loan_id"],
+                data["due_date"],
+                data["principal_amount"],
+                data["interest_amount"],
+                data["escrow_amount"],
+                data["total_amount"],
+                data.get("status", "scheduled"),
+                data.get("paid_date"),
+                data.get("paid_amount"),
+                data.get("payment_method_id"),
+                data.get("confirmation_number"),
+            ),
+        )
 
     # --------------------------------------------------------------------- Loans
-    def get_loan(self, loan_id: str) -> Optional[LoanAccount]:
+    def get_loan(self, loan_id: str) -> LoanAccount | None:
         """Get a loan by ID."""
         with self._conn() as conn:
             cursor = conn.execute("SELECT * FROM loans WHERE id = ?", (loan_id,))
             row = cursor.fetchone()
             return self._row_to_loan(row) if row else None
 
-    def get_loan_by_customer(self, customer_id: str) -> Optional[LoanAccount]:
+    def get_loan_by_customer(self, customer_id: str) -> LoanAccount | None:
         """Get the primary loan for a customer."""
         with self._conn() as conn:
             cursor = conn.execute(
                 "SELECT * FROM loans WHERE customer_id = ? AND is_active = 1 LIMIT 1",
-                (customer_id,)
+                (customer_id,),
             )
             row = cursor.fetchone()
             return self._row_to_loan(row) if row else None
@@ -194,28 +240,36 @@ class ServicingDatabase:
         """Get all active loans for a customer."""
         with self._conn() as conn:
             cursor = conn.execute(
-                "SELECT * FROM loans WHERE customer_id = ? AND is_active = 1",
-                (customer_id,)
+                "SELECT * FROM loans WHERE customer_id = ? AND is_active = 1", (customer_id,)
             )
             return [self._row_to_loan(row) for row in cursor.fetchall()]
 
     def update_loan(self, loan: LoanAccount) -> None:
         """Update a loan record."""
         with self._conn() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 UPDATE loans SET
                     current_balance = ?, monthly_payment = ?, remaining_months = ?,
                     payment_day = ?, next_due_date = ?, escrow_balance = ?,
                     autopay_enabled = ?, autopay_payment_method_id = ?,
                     last_payment_date = ?, is_active = ?
                 WHERE id = ?
-            """, (
-                str(loan.current_balance), str(loan.monthly_payment), loan.remaining_months,
-                loan.payment_day, loan.next_due_date.isoformat(), str(loan.escrow_balance),
-                loan.autopay_enabled, loan.autopay_payment_method_id,
-                loan.last_payment_date.isoformat() if loan.last_payment_date else None,
-                loan.is_active, loan.id
-            ))
+            """,
+                (
+                    str(loan.current_balance),
+                    str(loan.monthly_payment),
+                    loan.remaining_months,
+                    loan.payment_day,
+                    loan.next_due_date.isoformat(),
+                    str(loan.escrow_balance),
+                    loan.autopay_enabled,
+                    loan.autopay_payment_method_id,
+                    loan.last_payment_date.isoformat() if loan.last_payment_date else None,
+                    loan.is_active,
+                    loan.id,
+                ),
+            )
 
     def _row_to_loan(self, row: sqlite3.Row) -> LoanAccount:
         """Convert a database row to a LoanAccount."""
@@ -237,13 +291,17 @@ class ServicingDatabase:
             autopay_enabled=bool(row["autopay_enabled"]),
             autopay_payment_method_id=row["autopay_payment_method_id"],
             origination_date=date.fromisoformat(row["origination_date"]),
-            maturity_date=date.fromisoformat(row["maturity_date"]) if row["maturity_date"] else None,
-            last_payment_date=date.fromisoformat(row["last_payment_date"]) if row["last_payment_date"] else None,
-            is_active=bool(row["is_active"])
+            maturity_date=date.fromisoformat(row["maturity_date"])
+            if row["maturity_date"]
+            else None,
+            last_payment_date=date.fromisoformat(row["last_payment_date"])
+            if row["last_payment_date"]
+            else None,
+            is_active=bool(row["is_active"]),
         )
 
     # --------------------------------------------------------------------- Payment Methods
-    def get_payment_method(self, method_id: str) -> Optional[PaymentMethod]:
+    def get_payment_method(self, method_id: str) -> PaymentMethod | None:
         """Get a payment method by ID."""
         with self._conn() as conn:
             cursor = conn.execute("SELECT * FROM payment_methods WHERE id = ?", (method_id,))
@@ -255,16 +313,16 @@ class ServicingDatabase:
         with self._conn() as conn:
             cursor = conn.execute(
                 "SELECT * FROM payment_methods WHERE customer_id = ? ORDER BY is_default DESC, created_at DESC",
-                (customer_id,)
+                (customer_id,),
             )
             return [self._row_to_payment_method(row) for row in cursor.fetchall()]
 
-    def get_default_payment_method(self, customer_id: str) -> Optional[PaymentMethod]:
+    def get_default_payment_method(self, customer_id: str) -> PaymentMethod | None:
         """Get the default payment method for a customer."""
         with self._conn() as conn:
             cursor = conn.execute(
                 "SELECT * FROM payment_methods WHERE customer_id = ? AND is_default = 1 LIMIT 1",
-                (customer_id,)
+                (customer_id,),
             )
             row = cursor.fetchone()
             return self._row_to_payment_method(row) if row else None
@@ -273,42 +331,55 @@ class ServicingDatabase:
         """Add a new payment method."""
         method.id = method.id or _new_id("PM")
         with self._conn() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO payment_methods (
                     id, customer_id, method_type, last_four, institution_name,
                     nickname, is_default, is_autopay, token, expiration_date, created_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                method.id, method.customer_id, method.method_type.value, method.last_four,
-                method.institution_name, method.nickname, method.is_default,
-                method.is_autopay, method.token, method.expiration_date,
-                method.created_at.isoformat()
-            ))
+            """,
+                (
+                    method.id,
+                    method.customer_id,
+                    method.method_type.value,
+                    method.last_four,
+                    method.institution_name,
+                    method.nickname,
+                    method.is_default,
+                    method.is_autopay,
+                    method.token,
+                    method.expiration_date,
+                    method.created_at.isoformat(),
+                ),
+            )
         return method
 
     def update_payment_method(self, method: PaymentMethod) -> None:
         """Update a payment method."""
         with self._conn() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 UPDATE payment_methods SET
                     nickname = ?, is_default = ?, is_autopay = ?, token = ?, expiration_date = ?
                 WHERE id = ?
-            """, (
-                method.nickname, method.is_default, method.is_autopay,
-                method.token, method.expiration_date, method.id
-            ))
+            """,
+                (
+                    method.nickname,
+                    method.is_default,
+                    method.is_autopay,
+                    method.token,
+                    method.expiration_date,
+                    method.id,
+                ),
+            )
 
     def set_default_payment_method(self, customer_id: str, method_id: str) -> None:
         """Set a payment method as the default, clearing others."""
         with self._conn() as conn:
             conn.execute(
-                "UPDATE payment_methods SET is_default = 0 WHERE customer_id = ?",
-                (customer_id,)
+                "UPDATE payment_methods SET is_default = 0 WHERE customer_id = ?", (customer_id,)
             )
-            conn.execute(
-                "UPDATE payment_methods SET is_default = 1 WHERE id = ?",
-                (method_id,)
-            )
+            conn.execute("UPDATE payment_methods SET is_default = 1 WHERE id = ?", (method_id,))
 
     def delete_payment_method(self, method_id: str) -> bool:
         """Delete a payment method. Returns True if deleted."""
@@ -329,7 +400,9 @@ class ServicingDatabase:
             is_autopay=bool(row["is_autopay"]),
             token=row["token"] or "",
             expiration_date=row["expiration_date"],
-            created_at=datetime.fromisoformat(row["created_at"]) if row["created_at"] else datetime.now()
+            created_at=datetime.fromisoformat(row["created_at"])
+            if row["created_at"]
+            else datetime.now(),
         )
 
     # --------------------------------------------------------------------- Payment History
@@ -338,7 +411,7 @@ class ServicingDatabase:
         with self._conn() as conn:
             cursor = conn.execute(
                 "SELECT * FROM payment_history WHERE loan_id = ? ORDER BY payment_date DESC LIMIT ?",
-                (loan_id, limit)
+                (loan_id, limit),
             )
             return [self._row_to_payment_history(row) for row in cursor.fetchall()]
 
@@ -347,22 +420,31 @@ class ServicingDatabase:
         payment.id = payment.id or _new_id("PAY")
         payment.confirmation_number = payment.confirmation_number or _new_id("REF")
         with self._conn() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO payment_history (
                     id, loan_id, payment_date, amount, principal_applied,
                     interest_applied, escrow_applied, payment_method_id,
                     payment_method_last_four, status, confirmation_number,
                     posted_date, created_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                payment.id, payment.loan_id, payment.payment_date.isoformat(),
-                str(payment.amount), str(payment.principal_applied),
-                str(payment.interest_applied), str(payment.escrow_applied),
-                payment.payment_method_id, payment.payment_method_last_four,
-                payment.status.value, payment.confirmation_number,
-                payment.posted_date.isoformat() if payment.posted_date else None,
-                payment.created_at.isoformat()
-            ))
+            """,
+                (
+                    payment.id,
+                    payment.loan_id,
+                    payment.payment_date.isoformat(),
+                    str(payment.amount),
+                    str(payment.principal_applied),
+                    str(payment.interest_applied),
+                    str(payment.escrow_applied),
+                    payment.payment_method_id,
+                    payment.payment_method_last_four,
+                    payment.status.value,
+                    payment.confirmation_number,
+                    payment.posted_date.isoformat() if payment.posted_date else None,
+                    payment.created_at.isoformat(),
+                ),
+            )
         return payment
 
     def _row_to_payment_history(self, row: sqlite3.Row) -> PaymentHistory:
@@ -380,7 +462,9 @@ class ServicingDatabase:
             status=PaymentStatus(row["status"]),
             confirmation_number=row["confirmation_number"],
             posted_date=date.fromisoformat(row["posted_date"]) if row["posted_date"] else None,
-            created_at=datetime.fromisoformat(row["created_at"]) if row["created_at"] else datetime.now()
+            created_at=datetime.fromisoformat(row["created_at"])
+            if row["created_at"]
+            else datetime.now(),
         )
 
     # --------------------------------------------------------------------- Payment Schedule
@@ -391,18 +475,18 @@ class ServicingDatabase:
                 """SELECT * FROM payment_schedules
                    WHERE loan_id = ? AND status != 'completed'
                    ORDER BY due_date ASC LIMIT ?""",
-                (loan_id, limit)
+                (loan_id, limit),
             )
             return [self._row_to_payment_schedule(row) for row in cursor.fetchall()]
 
-    def get_next_payment(self, loan_id: str) -> Optional[PaymentSchedule]:
+    def get_next_payment(self, loan_id: str) -> PaymentSchedule | None:
         """Get the next scheduled payment for a loan."""
         with self._conn() as conn:
             cursor = conn.execute(
                 """SELECT * FROM payment_schedules
                    WHERE loan_id = ? AND status IN ('scheduled', 'pending')
                    ORDER BY due_date ASC LIMIT 1""",
-                (loan_id,)
+                (loan_id,),
             )
             row = cursor.fetchone()
             return self._row_to_payment_schedule(row) if row else None
@@ -416,25 +500,29 @@ class ServicingDatabase:
                    WHERE loan_id = ? AND status NOT IN ('completed')
                    AND due_date < ?
                    ORDER BY due_date ASC""",
-                (loan_id, today)
+                (loan_id, today),
             )
             return [self._row_to_payment_schedule(row) for row in cursor.fetchall()]
 
     def update_payment_schedule(self, schedule: PaymentSchedule) -> None:
         """Update a payment schedule record."""
         with self._conn() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 UPDATE payment_schedules SET
                     status = ?, paid_date = ?, paid_amount = ?,
                     payment_method_id = ?, confirmation_number = ?
                 WHERE id = ?
-            """, (
-                schedule.status.value,
-                schedule.paid_date.isoformat() if schedule.paid_date else None,
-                str(schedule.paid_amount) if schedule.paid_amount else None,
-                schedule.payment_method_id, schedule.confirmation_number,
-                schedule.id
-            ))
+            """,
+                (
+                    schedule.status.value,
+                    schedule.paid_date.isoformat() if schedule.paid_date else None,
+                    str(schedule.paid_amount) if schedule.paid_amount else None,
+                    schedule.payment_method_id,
+                    schedule.confirmation_number,
+                    schedule.id,
+                ),
+            )
 
     def _row_to_payment_schedule(self, row: sqlite3.Row) -> PaymentSchedule:
         """Convert a database row to a PaymentSchedule."""
@@ -450,7 +538,7 @@ class ServicingDatabase:
             paid_date=date.fromisoformat(row["paid_date"]) if row["paid_date"] else None,
             paid_amount=Decimal(str(row["paid_amount"])) if row["paid_amount"] else None,
             payment_method_id=row["payment_method_id"],
-            confirmation_number=row["confirmation_number"]
+            confirmation_number=row["confirmation_number"],
         )
 
     # --------------------------------------------------------------------- Delinquency
@@ -472,29 +560,38 @@ class ServicingDatabase:
         """Create a forbearance request."""
         request.id = request.id or _new_id("FB")
         with self._conn() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO forbearance_requests (
                     id, loan_id, customer_id, request_date, reason, requested_months,
                     status, approved_months, start_date, end_date, notes, created_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                request.id, request.loan_id, request.customer_id,
-                request.request_date.isoformat(), request.reason, request.requested_months,
-                request.status.value, request.approved_months,
-                request.start_date.isoformat() if request.start_date else None,
-                request.end_date.isoformat() if request.end_date else None,
-                request.notes, request.created_at.isoformat()
-            ))
+            """,
+                (
+                    request.id,
+                    request.loan_id,
+                    request.customer_id,
+                    request.request_date.isoformat(),
+                    request.reason,
+                    request.requested_months,
+                    request.status.value,
+                    request.approved_months,
+                    request.start_date.isoformat() if request.start_date else None,
+                    request.end_date.isoformat() if request.end_date else None,
+                    request.notes,
+                    request.created_at.isoformat(),
+                ),
+            )
         return request
 
-    def get_forbearance_request(self, loan_id: str) -> Optional[ForbearanceRequest]:
+    def get_forbearance_request(self, loan_id: str) -> ForbearanceRequest | None:
         """Get the most recent forbearance request for a loan."""
         with self._conn() as conn:
             cursor = conn.execute(
                 """SELECT * FROM forbearance_requests
                    WHERE loan_id = ?
                    ORDER BY created_at DESC LIMIT 1""",
-                (loan_id,)
+                (loan_id,),
             )
             row = cursor.fetchone()
             if not row:
@@ -511,34 +608,42 @@ class ServicingDatabase:
                 start_date=date.fromisoformat(row["start_date"]) if row["start_date"] else None,
                 end_date=date.fromisoformat(row["end_date"]) if row["end_date"] else None,
                 notes=row["notes"] or "",
-                created_at=datetime.fromisoformat(row["created_at"])
+                created_at=datetime.fromisoformat(row["created_at"]),
             )
 
     def add_payment_plan(self, plan: PaymentPlan) -> PaymentPlan:
         """Create a payment plan for past-due amounts."""
         plan.id = plan.id or _new_id("PP")
         with self._conn() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO payment_plans (
                     id, loan_id, start_date, end_date, total_past_due,
                     additional_monthly_amount, payments_remaining, status, created_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                plan.id, plan.loan_id, plan.start_date.isoformat(),
-                plan.end_date.isoformat(), str(plan.total_past_due),
-                str(plan.additional_monthly_amount), plan.payments_remaining,
-                plan.status, plan.created_at.isoformat()
-            ))
+            """,
+                (
+                    plan.id,
+                    plan.loan_id,
+                    plan.start_date.isoformat(),
+                    plan.end_date.isoformat(),
+                    str(plan.total_past_due),
+                    str(plan.additional_monthly_amount),
+                    plan.payments_remaining,
+                    plan.status,
+                    plan.created_at.isoformat(),
+                ),
+            )
         return plan
 
-    def get_payment_plan(self, loan_id: str) -> Optional[PaymentPlan]:
+    def get_payment_plan(self, loan_id: str) -> PaymentPlan | None:
         """Get the active payment plan for a loan."""
         with self._conn() as conn:
             cursor = conn.execute(
                 """SELECT * FROM payment_plans
                    WHERE loan_id = ? AND status = 'active'
                    ORDER BY created_at DESC LIMIT 1""",
-                (loan_id,)
+                (loan_id,),
             )
             row = cursor.fetchone()
             if not row:
@@ -552,7 +657,7 @@ class ServicingDatabase:
                 additional_monthly_amount=Decimal(str(row["additional_monthly_amount"])),
                 payments_remaining=row["payments_remaining"],
                 status=row["status"],
-                created_at=datetime.fromisoformat(row["created_at"])
+                created_at=datetime.fromisoformat(row["created_at"]),
             )
 
     # --------------------------------------------------------------------- Utilities
@@ -679,7 +784,7 @@ CREATE INDEX IF NOT EXISTS idx_payment_schedules_loan ON payment_schedules(loan_
 
 
 # Singleton instance
-_db: Optional[ServicingDatabase] = None
+_db: ServicingDatabase | None = None
 
 
 def get_servicing_db() -> ServicingDatabase:

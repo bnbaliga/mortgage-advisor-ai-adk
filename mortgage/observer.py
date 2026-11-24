@@ -9,10 +9,10 @@ The observer runs in the after_tool_callback (audit) and:
 Suggestions are natural language hints that the persona incorporates
 into conversation naturally, not robotic script insertions.
 """
+
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 from mortgage.mortgage import CallState
 
@@ -87,7 +87,7 @@ def _analyze_balance(result: dict, call: CallState) -> list[str]:
             )
         else:
             suggestions.append(
-                f"Account is significantly past due. Be empathetic and mention "
+                "Account is significantly past due. Be empathetic and mention "
                 "hardship and forbearance options may be available."
             )
             call.risk_flags.append("severe_delinquency")

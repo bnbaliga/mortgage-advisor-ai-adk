@@ -5,6 +5,7 @@ see on `tool_context.session.id`.
 
 Publishing to a call with no subscriber (e.g. inside `adk web`) is a no-op.
 """
+
 import asyncio
 
 _queues: dict[str, asyncio.Queue] = {}

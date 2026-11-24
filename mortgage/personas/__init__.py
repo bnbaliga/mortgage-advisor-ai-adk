@@ -9,9 +9,13 @@ specific agent role:
 - Collections (Future): Early and late stage collections
 - Welcome (Future): New borrower onboarding
 """
-from mortgage.personas.triage import SAM_INSTRUCTION, AGENT_NAME as SAM_NAME
-from mortgage.personas.origination import MAC_INSTRUCTION, AGENT_NAME as MAC_NAME
-from mortgage.personas.servicing import IVY_INSTRUCTION, AGENT_NAME as IVY_NAME
+
+from mortgage.personas.origination import AGENT_NAME as MAC_NAME
+from mortgage.personas.origination import MAC_INSTRUCTION
+from mortgage.personas.servicing import AGENT_NAME as IVY_NAME
+from mortgage.personas.servicing import IVY_INSTRUCTION
+from mortgage.personas.triage import AGENT_NAME as SAM_NAME
+from mortgage.personas.triage import SAM_INSTRUCTION
 
 __all__ = [
     "SAM_INSTRUCTION",

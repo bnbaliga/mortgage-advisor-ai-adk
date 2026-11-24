@@ -6,6 +6,7 @@ Mac handles:
 - State-specific eligibility checks
 - Lead registration and loan officer transfers
 """
+
 import os
 
 AGENT_NAME = os.getenv("MORTGAGE_AGENT_NAME", "Mac")

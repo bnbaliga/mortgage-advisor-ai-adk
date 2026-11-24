@@ -8,12 +8,12 @@ Routes calls to the appropriate agent persona based on:
 Since Google ADK doesn't have native multi-agent support, we implement
 routing as dynamic persona switching via CallState.active_agent.
 """
+
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 from mortgage.mortgage import CallState
 
@@ -22,16 +22,18 @@ log = logging.getLogger("mortgage.routing")
 
 class AgentType(Enum):
     """Available agent personas."""
-    TRIAGE = "triage"            # Sam - initial triage, routes to specialists
+
+    TRIAGE = "triage"  # Sam - initial triage, routes to specialists
     ORIGINATION = "origination"  # Mac - new loans, inquiries
-    SERVICING = "servicing"      # Ivy - existing loan management
-    WELCOME = "welcome"          # Welcome calls for new borrowers
+    SERVICING = "servicing"  # Ivy - existing loan management
+    WELCOME = "welcome"  # Welcome calls for new borrowers
     COLLECTIONS = "collections"  # Early/late stage collections
 
 
 @dataclass
 class RoutingDecision:
     """Result of routing logic."""
+
     agent: AgentType
     reason: str
     silent: bool = True  # True = switch without announcing
@@ -39,21 +41,54 @@ class RoutingDecision:
 
 # Intent keywords for routing
 SERVICING_INTENTS = {
-    "balance", "payment", "pay", "autopay", "auto-pay", "due date",
-    "payoff", "statement", "escrow", "account", "monthly",
-    "change", "update", "card", "bank account", "debit",
+    "balance",
+    "payment",
+    "pay",
+    "autopay",
+    "auto-pay",
+    "due date",
+    "payoff",
+    "statement",
+    "escrow",
+    "account",
+    "monthly",
+    "change",
+    "update",
+    "card",
+    "bank account",
+    "debit",
 }
 
 COLLECTIONS_INTENTS = {
-    "late", "past due", "overdue", "missed payment", "behind",
-    "forbearance", "hardship", "can't pay", "struggling", "help",
-    "payment plan", "arrangement",
+    "late",
+    "past due",
+    "overdue",
+    "missed payment",
+    "behind",
+    "forbearance",
+    "hardship",
+    "can't pay",
+    "struggling",
+    "help",
+    "payment plan",
+    "arrangement",
 }
 
 ORIGINATION_INTENTS = {
-    "new loan", "refinance", "refi", "heloc", "home equity",
-    "rate", "rates", "purchase", "buy", "buying", "pre-approval",
-    "qualify", "eligibility", "credit score",
+    "new loan",
+    "refinance",
+    "refi",
+    "heloc",
+    "home equity",
+    "rate",
+    "rates",
+    "purchase",
+    "buy",
+    "buying",
+    "pre-approval",
+    "qualify",
+    "eligibility",
+    "credit score",
 }
 
 
@@ -72,13 +107,11 @@ def detect_initial_intent(call: CallState, has_active_loan: bool) -> RoutingDeci
     # Default to triage (Sam) for all new calls
     # Sam will ask qualifying questions and route to the right specialist
     return RoutingDecision(
-        agent=AgentType.TRIAGE,
-        reason="initial triage for new call",
-        silent=True
+        agent=AgentType.TRIAGE, reason="initial triage for new call", silent=True
     )
 
 
-def detect_intent_from_text(text: str) -> Optional[AgentType]:
+def detect_intent_from_text(text: str) -> AgentType | None:
     """Detect intent from caller's spoken text.
 
     Args:
@@ -104,7 +137,7 @@ def detect_intent_from_text(text: str) -> Optional[AgentType]:
     return None
 
 
-def should_handoff(call: CallState, detected_intent: Optional[AgentType]) -> Optional[RoutingDecision]:
+def should_handoff(call: CallState, detected_intent: AgentType | None) -> RoutingDecision | None:
     """Determine if we should hand off to a different agent.
 
     Args:
@@ -128,7 +161,7 @@ def should_handoff(call: CallState, detected_intent: Optional[AgentType]) -> Opt
     return RoutingDecision(
         agent=detected_intent,
         reason=f"intent switched from {current.value} to {detected_intent.value}",
-        silent=True
+        silent=True,
     )
 
 
@@ -160,26 +193,33 @@ def get_agent_greeting(agent: AgentType, company_name: str, agent_name: str) -> 
         Greeting string for the agent
     """
     if agent == AgentType.TRIAGE:
-        return (f"Hi, this is {agent_name} with {company_name}. "
-                "How can I help you today?")
+        return f"Hi, this is {agent_name} with {company_name}. " "How can I help you today?"
 
     if agent == AgentType.SERVICING:
-        return (f"Hi, this is {agent_name} with {company_name} servicing. "
-                "This call may be recorded for quality. "
-                "May I have your name to pull up your account?")
+        return (
+            f"Hi, this is {agent_name} with {company_name} servicing. "
+            "This call may be recorded for quality. "
+            "May I have your name to pull up your account?"
+        )
 
     if agent == AgentType.COLLECTIONS:
-        return (f"Hi, this is {agent_name} with {company_name}. "
-                "This call may be recorded for quality. "
-                "I'm calling about your mortgage account. May I verify your name?")
+        return (
+            f"Hi, this is {agent_name} with {company_name}. "
+            "This call may be recorded for quality. "
+            "I'm calling about your mortgage account. May I verify your name?"
+        )
 
     if agent == AgentType.WELCOME:
-        return (f"Hi, this is {agent_name} with {company_name}. "
-                "Congratulations on your new mortgage! "
-                "I'm calling to help you get set up with your account. "
-                "Is this a good time?")
+        return (
+            f"Hi, this is {agent_name} with {company_name}. "
+            "Congratulations on your new mortgage! "
+            "I'm calling to help you get set up with your account. "
+            "Is this a good time?"
+        )
 
     # Default: Origination
-    return (f"Hi, this is {agent_name}, your AI Mortgage advisor. "
-            "I can answer your mortgage related questions and connect you "
-            "with a licensed loan officer. How can I help you today?")
+    return (
+        f"Hi, this is {agent_name}, your AI Mortgage advisor. "
+        "I can answer your mortgage related questions and connect you "
+        "with a licensed loan officer. How can I help you today?"
+    )

@@ -1,4 +1,5 @@
 """Tests for HELOC eligibility rules, state normalization, and property use normalization."""
+
 import asyncio
 from datetime import datetime
 from types import SimpleNamespace
@@ -35,6 +36,7 @@ def run(coro):
 
 # --- State normalization tests ---
 
+
 def test_normalize_state_tx_variations():
     """'Texas' and 'tx' both normalize to 'TX'."""
     assert normalize_state("Texas") == "TX"
@@ -68,6 +70,7 @@ def test_normalize_state_empty_raises():
 
 
 # --- Property use normalization tests ---
+
 
 def test_normalize_property_use_rental_to_investment():
     """'rental' maps to 'investment'."""
@@ -112,6 +115,7 @@ def test_normalize_property_use_empty_raises():
 
 # --- HELOC eligibility tests ---
 
+
 def test_tx_rental_ineligible(store):
     """TX + 'rental' -> ineligible (investment properties not allowed in Texas)."""
     result = store.check_heloc_eligibility("TX", "rental")
@@ -147,10 +151,11 @@ def test_tx_primary_eligible_with_max_heloc(store):
     property_value = 550_000
     current_balance = 100_000
     result = store.check_heloc_eligibility(
-        "TX", "primary",
+        "TX",
+        "primary",
         has_existing_cashout=False,
         property_value=property_value,
-        current_balance=current_balance
+        current_balance=current_balance,
     )
     assert result["eligible"] is True
     assert result["state"] == "TX"
@@ -198,6 +203,7 @@ def test_unknown_property_use_raises_error(store):
 
 
 # --- Tools layer tests ---
+
 
 def test_check_heloc_eligibility_tool_tx_rental(store, ctx):
     """Tool: TX + 'rental' -> ineligible."""

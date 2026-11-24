@@ -7,15 +7,16 @@ over `MortgageStore`, so this is the file you swap for a real LOS integration
 Everything is in memory and seeded from `assets/mortgage/mortgage.json`.
 Restarting the server resets the data.
 """
+
 from __future__ import annotations
 
 import json
 import re
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time
 from pathlib import Path
-from typing import Callable, Optional
 from zoneinfo import ZoneInfo
 
 SEED_PATH = Path(__file__).resolve().parents[1] / "assets" / "mortgage" / "mortgage.json"
@@ -32,6 +33,7 @@ class MortgageError(Exception):
 
 
 # ---------------------------------------------------------------- records ---
+
 
 @dataclass
 class LoanOfficer:
@@ -85,6 +87,7 @@ class MortgageProduct:
 @dataclass
 class Lead:
     """A potential customer inquiry — tracked for follow-up."""
+
     id: str
     name: str
     phone: str
@@ -92,32 +95,35 @@ class Lead:
     property_state: str
     summary: str
     created: datetime
-    assigned_officer: Optional[str] = None
+    assigned_officer: str | None = None
 
 
 @dataclass
 class TransferRequest:
     """Request to transfer caller to a licensed loan officer."""
+
     id: str
     reason: str
-    customer_id: Optional[str]
+    customer_id: str | None
     created: datetime
     details: dict = field(default_factory=dict)
 
 
 class IdentityStrength:
     """Identity verification levels for servicing operations."""
-    NONE = "none"       # Unverified - only public info
-    BASIC = "basic"     # Name + phone last 4 - balance, history
-    STRONG = "strong"   # DOB + loan balance - payments, changes
+
+    NONE = "none"  # Unverified - only public info
+    BASIC = "basic"  # Name + phone last 4 - balance, history
+    STRONG = "strong"  # DOB + loan balance - payments, changes
 
 
 @dataclass
 class CallState:
     """What we know about ONE live call. Lives server-side, keyed by
     the ADK session id — never in the prompt."""
+
     # Existing origination fields
-    verified_customer_id: Optional[str] = None
+    verified_customer_id: str | None = None
     failed_verifications: int = 0
     inquiry_context: dict = field(default_factory=dict)  # track conversation context
 
@@ -125,7 +131,7 @@ class CallState:
     active_agent: str = "triage"  # triage, origination, servicing, welcome, collections
 
     # Servicing fields
-    verified_loan_id: Optional[str] = None
+    verified_loan_id: str | None = None
     identity_strength: str = IdentityStrength.NONE
 
     # Observer state (injected suggestions from after_tool_callback)
@@ -134,10 +140,10 @@ class CallState:
 
     # Secure capture state (for DTMF card entry)
     secure_capture_pending: bool = False
-    secure_capture_type: Optional[str] = None  # "card", "bank"
+    secure_capture_type: str | None = None  # "card", "bank"
 
     # Payment authorization state
-    pending_authorization: Optional[dict] = None  # details needing confirmation
+    pending_authorization: dict | None = None  # details needing confirmation
     authorization_confirmed: bool = False
 
     @property
@@ -167,25 +173,64 @@ class CallState:
 
 # ---------------------------------------------------------------- helpers ---
 
+
 def normalize_name(s: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^a-z\s]", "", (s or "").lower().replace("-", " "))).strip()
 
 
 # Full 50-state + DC name -> 2-letter code map
 STATE_NAME_TO_CODE = {
-    "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",
-    "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE",
-    "district of columbia": "DC", "florida": "FL", "georgia": "GA", "hawaii": "HI",
-    "idaho": "ID", "illinois": "IL", "indiana": "IN", "iowa": "IA",
-    "kansas": "KS", "kentucky": "KY", "louisiana": "LA", "maine": "ME",
-    "maryland": "MD", "massachusetts": "MA", "michigan": "MI", "minnesota": "MN",
-    "mississippi": "MS", "missouri": "MO", "montana": "MT", "nebraska": "NE",
-    "nevada": "NV", "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM",
-    "new york": "NY", "north carolina": "NC", "north dakota": "ND", "ohio": "OH",
-    "oklahoma": "OK", "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI",
-    "south carolina": "SC", "south dakota": "SD", "tennessee": "TN", "texas": "TX",
-    "utah": "UT", "vermont": "VT", "virginia": "VA", "washington": "WA",
-    "west virginia": "WV", "wisconsin": "WI", "wyoming": "WY",
+    "alabama": "AL",
+    "alaska": "AK",
+    "arizona": "AZ",
+    "arkansas": "AR",
+    "california": "CA",
+    "colorado": "CO",
+    "connecticut": "CT",
+    "delaware": "DE",
+    "district of columbia": "DC",
+    "florida": "FL",
+    "georgia": "GA",
+    "hawaii": "HI",
+    "idaho": "ID",
+    "illinois": "IL",
+    "indiana": "IN",
+    "iowa": "IA",
+    "kansas": "KS",
+    "kentucky": "KY",
+    "louisiana": "LA",
+    "maine": "ME",
+    "maryland": "MD",
+    "massachusetts": "MA",
+    "michigan": "MI",
+    "minnesota": "MN",
+    "mississippi": "MS",
+    "missouri": "MO",
+    "montana": "MT",
+    "nebraska": "NE",
+    "nevada": "NV",
+    "new hampshire": "NH",
+    "new jersey": "NJ",
+    "new mexico": "NM",
+    "new york": "NY",
+    "north carolina": "NC",
+    "north dakota": "ND",
+    "ohio": "OH",
+    "oklahoma": "OK",
+    "oregon": "OR",
+    "pennsylvania": "PA",
+    "rhode island": "RI",
+    "south carolina": "SC",
+    "south dakota": "SD",
+    "tennessee": "TN",
+    "texas": "TX",
+    "utah": "UT",
+    "vermont": "VT",
+    "virginia": "VA",
+    "washington": "WA",
+    "west virginia": "WV",
+    "wisconsin": "WI",
+    "wyoming": "WY",
 }
 
 # Set of valid 2-letter state codes
@@ -288,9 +333,14 @@ def format_rate(rate: float) -> str:
 
 # ------------------------------------------------------------------ store ---
 
+
 class MortgageStore:
-    def __init__(self, seed: dict, clock: Callable[[], datetime] = datetime.now,
-                 rate_sheet: dict | None = None):
+    def __init__(
+        self,
+        seed: dict,
+        clock: Callable[[], datetime] = datetime.now,
+        rate_sheet: dict | None = None,
+    ):
         self.clock = clock
         c = seed["company"]
         self.info = c
@@ -319,7 +369,7 @@ class MortgageStore:
                 languages=lo["languages"],
                 available=lo["available"],
                 hours=hours,
-                timezone=lo.get("timezone", "America/Chicago")
+                timezone=lo.get("timezone", "America/Chicago"),
             )
 
         # FAQ
@@ -328,15 +378,27 @@ class MortgageStore:
         # Customers and properties
         self.customers: dict[str, Customer] = {}
         for raw in seed.get("customers", []):
-            props = [Property(
-                p["id"], p["address"], p["type"], p["estimated_value"],
-                p["mortgage_balance"], p.get("mortgage_type", ""), p["equity"]
-            ) for p in raw.get("properties", [])]
+            props = [
+                Property(
+                    p["id"],
+                    p["address"],
+                    p["type"],
+                    p["estimated_value"],
+                    p["mortgage_balance"],
+                    p.get("mortgage_type", ""),
+                    p["equity"],
+                )
+                for p in raw.get("properties", [])
+            ]
             cust = Customer(
-                raw["id"], raw["first_name"], raw["last_name"],
-                raw.get("phone", ""), raw.get("email", ""),
-                props, raw.get("credit_score_range", ""),
-                raw.get("notes", "")
+                raw["id"],
+                raw["first_name"],
+                raw["last_name"],
+                raw.get("phone", ""),
+                raw.get("email", ""),
+                props,
+                raw.get("credit_score_range", ""),
+                raw.get("notes", ""),
             )
             self.customers[cust.id] = cust
 
@@ -346,8 +408,12 @@ class MortgageStore:
         self.calls: dict[str, CallState] = {}
 
     @classmethod
-    def load(cls, path: Path = SEED_PATH, clock: Callable[[], datetime] = datetime.now,
-             rate_sheet_path: Path = RATE_SHEET_PATH) -> "MortgageStore":
+    def load(
+        cls,
+        path: Path = SEED_PATH,
+        clock: Callable[[], datetime] = datetime.now,
+        rate_sheet_path: Path = RATE_SHEET_PATH,
+    ) -> MortgageStore:
         seed = json.loads(path.read_text(encoding="utf-8"))
         rate_sheet = None
         if rate_sheet_path.exists():
@@ -421,10 +487,10 @@ class MortgageStore:
             "ltv_band": band,
             "term_years": product.get("term_years"),
             "benchmark": product.get("market_benchmark"),
-            "as_of": self.rate_sheet.get("as_of")
+            "as_of": self.rate_sheet.get("as_of"),
         }
 
-    def get_state_rules(self, state: str, product_type: str = "heloc") -> tuple[str, Optional[dict]]:
+    def get_state_rules(self, state: str, product_type: str = "heloc") -> tuple[str, dict | None]:
         """Get state-specific lending rules.
 
         Returns:
@@ -442,10 +508,14 @@ class MortgageStore:
             return state_code, state_info.get("cashout_rules")
         return state_code, state_info
 
-    def check_heloc_eligibility(self, state: str, property_type: str,
-                                 has_existing_cashout: bool = False,
-                                 property_value: float = 0,
-                                 current_balance: float = 0) -> dict:
+    def check_heloc_eligibility(
+        self,
+        state: str,
+        property_type: str,
+        has_existing_cashout: bool = False,
+        property_value: float = 0,
+        current_balance: float = 0,
+    ) -> dict:
         """Check if HELOC is allowed given the parameters."""
         # Normalize property use at the top - raises MortgageError if unknown
         normalized_property_type = normalize_property_use(property_type)
@@ -461,7 +531,7 @@ class MortgageStore:
                 "property_type": normalized_property_type,
                 "eligible": None,
                 "status": "needs_review",
-                "say": "Explain you can't confirm eligibility for that state on this call and offer to connect them with a licensed loan officer."
+                "say": "Explain you can't confirm eligibility for that state on this call and offer to connect them with a licensed loan officer.",
             }
 
         result = {
@@ -469,20 +539,26 @@ class MortgageStore:
             "property_type": normalized_property_type,
             "eligible": True,
             "issues": [],
-            "alternatives": []
+            "alternatives": [],
         }
 
         # Check investment property restriction
-        if normalized_property_type == "investment" and not rules.get("allowed_on_investment", True):
+        if normalized_property_type == "investment" and not rules.get(
+            "allowed_on_investment", True
+        ):
             result["eligible"] = False
             result["issues"].append(f"{state_code} does not allow HELOCs on investment properties")
-            result["alternatives"].append("Consider a cash-out refinance on the investment property")
+            result["alternatives"].append(
+                "Consider a cash-out refinance on the investment property"
+            )
             result["alternatives"].append("Use a HELOC on your primary residence instead")
 
         # Check existing cash-out restriction
         if has_existing_cashout and not rules.get("allowed_with_existing_cashout", True):
             result["eligible"] = False
-            result["issues"].append(f"{state_code} does not allow HELOCs when there's an existing cash-out mortgage")
+            result["issues"].append(
+                f"{state_code} does not allow HELOCs when there's an existing cash-out mortgage"
+            )
             result["alternatives"].append("Refinance the existing mortgage first, then add a HELOC")
             result["alternatives"].append("Do another cash-out refinance instead")
 
@@ -497,25 +573,30 @@ class MortgageStore:
 
             if current_ltv >= max_cltv:
                 result["eligible"] = False
-                result["issues"].append(f"Current LTV ({current_ltv:.1f}%) already at or above maximum ({max_cltv}%)")
+                result["issues"].append(
+                    f"Current LTV ({current_ltv:.1f}%) already at or above maximum ({max_cltv}%)"
+                )
 
         # Add note about closing notice and rescission periods
         closing_notice = rules.get("closing_notice_days")
         rescission = rules.get("rescission_days")
         if closing_notice and rescission:
-            result["note"] = f"{state_code} requires a {closing_notice}-day notice period before closing, plus a {rescission}-day right to cancel after closing."
+            result["note"] = (
+                f"{state_code} requires a {closing_notice}-day notice period before closing, plus a {rescission}-day right to cancel after closing."
+            )
         elif closing_notice:
-            result["note"] = f"{state_code} requires a {closing_notice}-day notice period before closing."
+            result["note"] = (
+                f"{state_code} requires a {closing_notice}-day notice period before closing."
+            )
 
         return result
 
-    def get_product_info(self, product_key: str) -> Optional[dict]:
+    def get_product_info(self, product_key: str) -> dict | None:
         """Get info about a mortgage product."""
         key = product_key.lower().replace(" ", "_").replace("-", "_")
         return self.products.get(key)
 
-    def get_rate_estimate(self, product_key: str, credit_score: int = 720,
-                          ltv: float = 80) -> dict:
+    def get_rate_estimate(self, product_key: str, credit_score: int = 720, ltv: float = 80) -> dict:
         """Get estimated rate for a product based on credit and LTV.
 
         Uses rate sheet if available, otherwise falls back to product rate_range.
@@ -528,7 +609,7 @@ class MortgageStore:
                 "estimated_rate": sheet_rate["rate"],
                 "credit_tier": sheet_rate["credit_tier"],
                 "ltv_band": sheet_rate["ltv_band"],
-                "disclaimer": self.info["disclaimers"]["rates"]
+                "disclaimer": self.info["disclaimers"]["rates"],
             }
             # Add benchmark comparison if available
             if sheet_rate["benchmark"]:
@@ -571,7 +652,7 @@ class MortgageStore:
             "product": product["name"],
             "estimated_rate": round(estimated_rate, 3),
             "rate_range": f"{format_rate(base_low)} to {format_rate(base_high)}",
-            "disclaimer": self.info["disclaimers"]["rates"]
+            "disclaimer": self.info["disclaimers"]["rates"],
         }
 
     @staticmethod
@@ -586,16 +667,24 @@ class MortgageStore:
         num_payments = term_years * 12
         if monthly_rate == 0:
             return principal / num_payments
-        payment = principal * (monthly_rate * (1 + monthly_rate) ** num_payments) / \
-                  ((1 + monthly_rate) ** num_payments - 1)
+        payment = (
+            principal
+            * (monthly_rate * (1 + monthly_rate) ** num_payments)
+            / ((1 + monthly_rate) ** num_payments - 1)
+        )
         return round(payment, 2)
 
-    def compare_options(self, property_value: float, current_balance: float,
-                        credit_score: int, state: str,
-                        property_use: str = "primary",
-                        has_existing_cashout: bool = False,
-                        last_cashout_date: str = "",
-                        cash_needed: float = 0) -> dict:
+    def compare_options(
+        self,
+        property_value: float,
+        current_balance: float,
+        credit_score: int,
+        state: str,
+        property_use: str = "primary",
+        has_existing_cashout: bool = False,
+        last_cashout_date: str = "",
+        cash_needed: float = 0,
+    ) -> dict:
         """Compare eligible mortgage options for a property.
 
         Args:
@@ -635,7 +724,7 @@ class MortgageStore:
             property_type=normalized_property_use,
             has_existing_cashout=has_existing_cashout,
             property_value=property_value,
-            current_balance=current_balance
+            current_balance=current_balance,
         )
 
         # Handle HELOC based on eligibility result
@@ -643,25 +732,31 @@ class MortgageStore:
             # Needs review - cannot determine eligibility
             needs_review = True
             needs_review_reasons.append("HELOC eligibility requires loan officer review")
-            excluded.append({
-                "product": "heloc",
-                "reason": "State regulations not on file; requires loan officer review"
-            })
+            excluded.append(
+                {
+                    "product": "heloc",
+                    "reason": "State regulations not on file; requires loan officer review",
+                }
+            )
         elif heloc_check.get("eligible") is False:
             # Not eligible - add to excluded with reasons
             issues = heloc_check.get("issues", [])
-            excluded.append({
-                "product": "heloc",
-                "reason": "; ".join(issues) if issues else "Not eligible based on state rules"
-            })
+            excluded.append(
+                {
+                    "product": "heloc",
+                    "reason": "; ".join(issues) if issues else "Not eligible based on state rules",
+                }
+            )
         else:
             # Eligible - check if cash needed exceeds max
             max_heloc = heloc_check.get("max_heloc_amount", 0)
             if cash_needed > 0 and max_heloc > 0 and cash_needed > max_heloc:
-                excluded.append({
-                    "product": "heloc",
-                    "reason": f"Cash needed ${cash_needed:,.0f} exceeds max HELOC ${max_heloc:,.0f}"
-                })
+                excluded.append(
+                    {
+                        "product": "heloc",
+                        "reason": f"Cash needed ${cash_needed:,.0f} exceeds max HELOC ${max_heloc:,.0f}",
+                    }
+                )
             else:
                 # Add HELOC option
                 heloc_amount = cash_needed if cash_needed > 0 else min(50000, equity * 0.5)
@@ -670,17 +765,19 @@ class MortgageStore:
                     rate_info = self.get_rate_from_sheet("heloc", credit_score, heloc_ltv)
                     if rate_info and rate_info["rate"]:
                         monthly_interest = round(heloc_amount * rate_info["rate"] / 100 / 12, 2)
-                        options.append({
-                            "product": "heloc",
-                            "name": rate_info["product_name"],
-                            "rate": rate_info["rate"],
-                            "amount": round(heloc_amount, 0),
-                            "monthly_payment": monthly_interest,
-                            "payment_type": "interest_only_draw",
-                            "note": "Payment shown is interest-only during 10-year draw period",
-                            "credit_tier": rate_info["credit_tier"],
-                            "benchmark": rate_info.get("benchmark", {}).get("rate")
-                        })
+                        options.append(
+                            {
+                                "product": "heloc",
+                                "name": rate_info["product_name"],
+                                "rate": rate_info["rate"],
+                                "amount": round(heloc_amount, 0),
+                                "monthly_payment": monthly_interest,
+                                "payment_type": "interest_only_draw",
+                                "note": "Payment shown is interest-only during 10-year draw period",
+                                "credit_tier": rate_info["credit_tier"],
+                                "benchmark": rate_info.get("benchmark", {}).get("rate"),
+                            }
+                        )
 
         # --- Cash-Out Refinance Option ---
         cashout_eligible = True
@@ -715,29 +812,30 @@ class MortgageStore:
 
         if cashout_ltv > cashout_max_ltv:
             cashout_eligible = False
-            cashout_exclusion_reason = f"LTV {cashout_ltv:.1f}% exceeds {state_code} maximum {cashout_max_ltv}%"
+            cashout_exclusion_reason = (
+                f"LTV {cashout_ltv:.1f}% exceeds {state_code} maximum {cashout_max_ltv}%"
+            )
 
         if cashout_eligible:
             rate_info = self.get_rate_from_sheet("cash_out_refi", credit_score, cashout_ltv)
             if rate_info and rate_info["rate"]:
                 monthly = self.calculate_monthly_payment(cashout_amount, rate_info["rate"], 30)
-                options.append({
-                    "product": "cash_out_refi",
-                    "name": rate_info["product_name"],
-                    "rate": rate_info["rate"],
-                    "amount": round(cashout_amount, 0),
-                    "monthly_payment": monthly,
-                    "payment_type": "principal_and_interest",
-                    "term_years": 30,
-                    "cash_at_closing": round(cash_needed if cash_needed > 0 else 50000, 0),
-                    "credit_tier": rate_info["credit_tier"],
-                    "benchmark": rate_info.get("benchmark", {}).get("rate")
-                })
+                options.append(
+                    {
+                        "product": "cash_out_refi",
+                        "name": rate_info["product_name"],
+                        "rate": rate_info["rate"],
+                        "amount": round(cashout_amount, 0),
+                        "monthly_payment": monthly,
+                        "payment_type": "principal_and_interest",
+                        "term_years": 30,
+                        "cash_at_closing": round(cash_needed if cash_needed > 0 else 50000, 0),
+                        "credit_tier": rate_info["credit_tier"],
+                        "benchmark": rate_info.get("benchmark", {}).get("rate"),
+                    }
+                )
         elif cashout_exclusion_reason:
-            excluded.append({
-                "product": "cash_out_refi",
-                "reason": cashout_exclusion_reason
-            })
+            excluded.append({"product": "cash_out_refi", "reason": cashout_exclusion_reason})
 
         # --- Rate-and-Term Refinance Option (if they just want lower rate) ---
         if current_balance > 0 and cash_needed == 0:
@@ -745,17 +843,19 @@ class MortgageStore:
             rate_info = self.get_rate_from_sheet("rate_term_refi", credit_score, refi_ltv)
             if rate_info and rate_info["rate"]:
                 monthly = self.calculate_monthly_payment(current_balance, rate_info["rate"], 30)
-                options.append({
-                    "product": "rate_term_refi",
-                    "name": rate_info["product_name"],
-                    "rate": rate_info["rate"],
-                    "amount": round(current_balance, 0),
-                    "monthly_payment": monthly,
-                    "payment_type": "principal_and_interest",
-                    "term_years": 30,
-                    "credit_tier": rate_info["credit_tier"],
-                    "benchmark": rate_info.get("benchmark", {}).get("rate")
-                })
+                options.append(
+                    {
+                        "product": "rate_term_refi",
+                        "name": rate_info["product_name"],
+                        "rate": rate_info["rate"],
+                        "amount": round(current_balance, 0),
+                        "monthly_payment": monthly,
+                        "payment_type": "principal_and_interest",
+                        "term_years": 30,
+                        "credit_tier": rate_info["credit_tier"],
+                        "benchmark": rate_info.get("benchmark", {}).get("rate"),
+                    }
+                )
 
         # Calculate potential savings vs market benchmarks
         for opt in options:
@@ -773,7 +873,7 @@ class MortgageStore:
             "property_use": normalized_property_use,
             "options": options,
             "excluded": excluded,
-            "disclaimer": self.info["disclaimers"]["rates"]
+            "disclaimer": self.info["disclaimers"]["rates"],
         }
 
         if needs_review:
@@ -782,21 +882,23 @@ class MortgageStore:
 
         return result
 
-    def find_customer(self, full_name: str, phone_last_4: str = "") -> Optional[Customer]:
+    def find_customer(self, full_name: str, phone_last_4: str = "") -> Customer | None:
         """Find a customer by name and optional phone digits."""
         parts = normalize_name(full_name).split()
         if len(parts) < 2:
             return None
         first, last = parts[0], parts[-1]
         for c in self.customers.values():
-            if (normalize_name(c.first_name).split()[0] == first
-                    and normalize_name(c.last_name).split()[-1] == last):
+            if (
+                normalize_name(c.first_name).split()[0] == first
+                and normalize_name(c.last_name).split()[-1] == last
+            ):
                 if phone_last_4 and not c.phone.endswith(phone_last_4):
                     continue
                 return c
         return None
 
-    def loan_officer_by_name(self, name: str) -> Optional[LoanOfficer]:
+    def loan_officer_by_name(self, name: str) -> LoanOfficer | None:
         """Find a loan officer by name."""
         n = normalize_name(name)
         for lo in self.loan_officers.values():
@@ -817,7 +919,11 @@ class MortgageStore:
             # Convert current time to the officer's timezone
             try:
                 tz = ZoneInfo(lo.timezone)
-                officer_now = now.astimezone(tz) if now.tzinfo else now.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz)
+                officer_now = (
+                    now.astimezone(tz)
+                    if now.tzinfo
+                    else now.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz)
+                )
             except Exception:
                 # Fallback to system time if timezone conversion fails
                 officer_now = now
@@ -844,21 +950,20 @@ class MortgageStore:
         return available
 
     # ---- leads and transfers -------------------------------------------
-    def create_lead(self, name: str, phone: str, inquiry_type: str,
-                    state: str, summary: str) -> Lead:
+    def create_lead(
+        self, name: str, phone: str, inquiry_type: str, state: str, summary: str
+    ) -> Lead:
         """Create a new lead for follow-up."""
         lead = Lead(
-            self._new_id("L"), name, phone, inquiry_type,
-            state.upper(), summary, self.clock()
+            self._new_id("L"), name, phone, inquiry_type, state.upper(), summary, self.clock()
         )
         self.leads.append(lead)
         return lead
 
-    def create_transfer(self, reason: str, customer_id: Optional[str] = None,
-                        **details) -> TransferRequest:
+    def create_transfer(
+        self, reason: str, customer_id: str | None = None, **details
+    ) -> TransferRequest:
         """Create a transfer request to a loan officer."""
-        transfer = TransferRequest(
-            self._new_id("X"), reason, customer_id, self.clock(), details
-        )
+        transfer = TransferRequest(self._new_id("X"), reason, customer_id, self.clock(), details)
         self.transfers.append(transfer)
         return transfer

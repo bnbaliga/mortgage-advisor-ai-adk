@@ -4,33 +4,29 @@ Uses a small fixture corpus to test ingestion, indexing, and search.
 """
 
 import asyncio
-import sqlite3
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from types import SimpleNamespace
 
 import numpy as np
 import pytest
 
-from mortgage.knowledge.ingest import (
-    RawPassage,
-    Source,
-    chunk_text,
-    content_hash,
-    extract_text_from_html,
-    init_db,
-    store_passages,
-    approve_source,
-    get_status,
-)
 from mortgage.knowledge.index import (
     KnowledgeIndex,
     Passage,
     cosine_similarity,
     reset_index,
 )
-
+from mortgage.knowledge.ingest import (
+    RawPassage,
+    approve_source,
+    chunk_text,
+    content_hash,
+    extract_text_from_html,
+    get_status,
+    init_db,
+    store_passages,
+)
 
 # --- Fixture corpus ---
 
@@ -91,7 +87,7 @@ def temp_db():
 @pytest.fixture
 def sample_passages():
     """Create sample passages for testing."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return [
         RawPassage(
             source_id="tx_constitution",
@@ -100,7 +96,7 @@ def sample_passages():
             section="Section 50(a)(6)",
             content_hash=content_hash(TEXAS_CONSTITUTION_EXCERPT[:500]),
             retrieved_at=now,
-            url="https://statutes.capitol.texas.gov/..."
+            url="https://statutes.capitol.texas.gov/...",
         ),
         RawPassage(
             source_id="tx_constitution",
@@ -109,7 +105,7 @@ def sample_passages():
             section="Section 50(t)",
             content_hash=content_hash(TEXAS_CONSTITUTION_EXCERPT[500:]),
             retrieved_at=now,
-            url="https://statutes.capitol.texas.gov/..."
+            url="https://statutes.capitol.texas.gov/...",
         ),
         RawPassage(
             source_id="cfpb_reg_z",
@@ -118,12 +114,13 @@ def sample_passages():
             section="Section 1026.40",
             content_hash=content_hash(CFPB_HELOC_EXCERPT),
             retrieved_at=now,
-            url="https://www.consumerfinance.gov/..."
+            url="https://www.consumerfinance.gov/...",
         ),
     ]
 
 
 # --- Unit tests for ingest.py ---
+
 
 class TestContentHash:
     """Tests for content_hash function."""
@@ -264,6 +261,7 @@ class TestDatabaseOperations:
 
 # --- Unit tests for index.py ---
 
+
 class TestCosineSimilarity:
     """Tests for cosine_similarity function."""
 
@@ -342,7 +340,7 @@ class TestPassageToDict:
             title="Test Title",
             section="Section 1",
             url="https://example.com",
-            score=0.95
+            score=0.95,
         )
         d = passage.to_dict()
 
@@ -363,7 +361,7 @@ class TestPassageToDict:
             title="Test",
             section="",
             url=None,
-            score=0.5
+            score=0.5,
         )
         d = passage.to_dict()
 
@@ -372,6 +370,7 @@ class TestPassageToDict:
 
 
 # --- Integration tests for search_regulations tool ---
+
 
 class TestSearchRegulationsTool:
     """Tests for search_regulations tool function."""
@@ -383,6 +382,7 @@ class TestSearchRegulationsTool:
 
         async def run():
             from mortgage import tools
+
             # Search with no database - should return empty
             result = await tools.search_regulations("test query", "TX")
             return result
@@ -396,6 +396,7 @@ class TestSearchRegulationsTool:
 
         async def run():
             from mortgage import tools
+
             result = await tools.search_regulations("Texas HELOC rules")
             return result
 

@@ -1,4 +1,5 @@
 """Tests for servicing policy enforcement."""
+
 import asyncio
 import tempfile
 from pathlib import Path
@@ -6,9 +7,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from mortgage.database import ServicingDatabase, use_servicing_db
-from mortgage.mortgage import CallState, IdentityStrength, MortgageStore
 from mortgage import tools
+from mortgage.database import ServicingDatabase, use_servicing_db
+from mortgage.mortgage import IdentityStrength, MortgageStore
 from mortgage.policy import (
     AGENT_TOOL_ACCESS,
     NEEDS_BASIC_VERIFICATION,
@@ -49,11 +50,13 @@ def ctx(store):
 
 class MockTool:
     """Mock tool for testing policy."""
+
     def __init__(self, name: str):
         self.name = name
 
 
 # --- Verification Level Tests ---
+
 
 class TestBasicVerificationRequired:
     """Tests for tools requiring basic verification."""
@@ -87,7 +90,7 @@ class TestBasicVerificationRequired:
             "get_autopay_status",
             "get_payment_methods",
         }
-        assert NEEDS_BASIC_VERIFICATION == expected
+        assert expected == NEEDS_BASIC_VERIFICATION
 
 
 class TestStrongVerificationRequired:
@@ -141,7 +144,7 @@ class TestStrongVerificationRequired:
             "confirm_payment",
             "verify_customer_strong",
         }
-        assert NEEDS_STRONG_VERIFICATION == expected
+        assert expected == NEEDS_STRONG_VERIFICATION
 
 
 class TestPaymentConfirmation:

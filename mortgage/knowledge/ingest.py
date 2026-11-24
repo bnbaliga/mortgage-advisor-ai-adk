@@ -14,15 +14,14 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 import logging
 import re
 import sqlite3
 import time
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from collections.abc import Iterator
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Iterator, Optional
 from urllib.parse import urlparse
 from urllib.robotparser import RobotFileParser
 
@@ -41,46 +40,50 @@ PROJECT_ROOT = KNOWLEDGE_DIR.parents[1]
 @dataclass
 class Source:
     """An approved regulatory source."""
+
     id: str
     name: str
     jurisdiction: str
     topics: list[str]
     doc_type: str
-    url: Optional[str] = None
-    path: Optional[str] = None
+    url: str | None = None
+    path: str | None = None
     notes: str = ""
 
 
 @dataclass
 class RawPassage:
     """A text passage extracted from a source."""
+
     source_id: str
     content: str
     title: str
     section: str
     content_hash: str
     retrieved_at: datetime
-    url: Optional[str] = None
-    page_num: Optional[int] = None
+    url: str | None = None
+    page_num: int | None = None
 
 
 def load_sources() -> tuple[list[Source], dict]:
     """Load sources and settings from sources.yaml."""
-    with open(SOURCES_PATH, "r") as f:
+    with open(SOURCES_PATH) as f:
         data = yaml.safe_load(f)
 
     sources = []
     for s in data.get("sources", []):
-        sources.append(Source(
-            id=s["id"],
-            name=s["name"],
-            jurisdiction=s["jurisdiction"],
-            topics=s.get("topics", []),
-            doc_type=s.get("doc_type", "unknown"),
-            url=s.get("url"),
-            path=s.get("path"),
-            notes=s.get("notes", "")
-        ))
+        sources.append(
+            Source(
+                id=s["id"],
+                name=s["name"],
+                jurisdiction=s["jurisdiction"],
+                topics=s.get("topics", []),
+                doc_type=s.get("doc_type", "unknown"),
+                url=s.get("url"),
+                path=s.get("path"),
+                notes=s.get("notes", ""),
+            )
+        )
 
     settings = data.get("settings", {})
     return sources, settings
@@ -102,7 +105,7 @@ def chunk_text(text: str, chunk_size: int = 800, overlap: int = 100) -> Iterator
     Yields (chunk_text, chunk_index) tuples.
     """
     # Split into sentences (rough)
-    sentences = re.split(r'(?<=[.!?])\s+', text)
+    sentences = re.split(r"(?<=[.!?])\s+", text)
 
     current_chunk = []
     current_tokens = 0
@@ -166,14 +169,15 @@ def extract_text_from_html(html: str) -> tuple[str, str, list[str]]:
     """Extract text from HTML, return (text, title, section_headings)."""
     try:
         import trafilatura
+
         text = trafilatura.extract(html, include_comments=False, include_tables=True)
         if text:
             # Try to get title
-            title_match = re.search(r'<title[^>]*>([^<]+)</title>', html, re.IGNORECASE)
+            title_match = re.search(r"<title[^>]*>([^<]+)</title>", html, re.IGNORECASE)
             title = title_match.group(1).strip() if title_match else ""
 
             # Extract headings for sections
-            headings = re.findall(r'<h[1-6][^>]*>([^<]+)</h[1-6]>', html, re.IGNORECASE)
+            headings = re.findall(r"<h[1-6][^>]*>([^<]+)</h[1-6]>", html, re.IGNORECASE)
 
             return text, title, headings
     except ImportError:
@@ -182,6 +186,7 @@ def extract_text_from_html(html: str) -> tuple[str, str, list[str]]:
     # Fallback to BeautifulSoup
     try:
         from bs4 import BeautifulSoup
+
         soup = BeautifulSoup(html, "html.parser")
 
         # Remove script and style
@@ -189,14 +194,14 @@ def extract_text_from_html(html: str) -> tuple[str, str, list[str]]:
             tag.decompose()
 
         title = soup.title.string if soup.title else ""
-        headings = [h.get_text(strip=True) for h in soup.find_all(re.compile(r'^h[1-6]$'))]
+        headings = [h.get_text(strip=True) for h in soup.find_all(re.compile(r"^h[1-6]$"))]
         text = soup.get_text(separator=" ", strip=True)
 
         return text, title, headings
     except ImportError:
         # Last resort: regex stripping
-        text = re.sub(r'<[^>]+>', ' ', html)
-        text = re.sub(r'\s+', ' ', text).strip()
+        text = re.sub(r"<[^>]+>", " ", html)
+        text = re.sub(r"\s+", " ", text).strip()
         return text, "", []
 
 
@@ -204,6 +209,7 @@ def extract_text_from_pdf(pdf_path: Path) -> tuple[str, str, list[str]]:
     """Extract text from PDF file."""
     try:
         import pypdf
+
         reader = pypdf.PdfReader(str(pdf_path))
         text_parts = []
         for page in reader.pages:
@@ -220,7 +226,7 @@ def extract_text_from_pdf(pdf_path: Path) -> tuple[str, str, list[str]]:
         return "", "", []
 
 
-def fetch_url(url: str, settings: dict, robots: RobotsChecker) -> Optional[str]:
+def fetch_url(url: str, settings: dict, robots: RobotsChecker) -> str | None:
     """Fetch URL content with rate limiting and robots.txt compliance."""
     if settings.get("respect_robots_txt", True) and not robots.can_fetch(url):
         log.warning("Blocked by robots.txt: %s", url)
@@ -243,7 +249,7 @@ def fetch_url(url: str, settings: dict, robots: RobotsChecker) -> Optional[str]:
 def ingest_source(source: Source, settings: dict, robots: RobotsChecker) -> list[RawPassage]:
     """Ingest a single source, returning extracted passages."""
     passages = []
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     chunk_size = settings.get("chunk_size_tokens", 800)
     chunk_overlap = settings.get("chunk_overlap_tokens", 100)
 
@@ -259,15 +265,17 @@ def ingest_source(source: Source, settings: dict, robots: RobotsChecker) -> list
                     continue
 
                 section = headings[min(idx, len(headings) - 1)] if headings else ""
-                passages.append(RawPassage(
-                    source_id=source.id,
-                    content=chunk.strip(),
-                    title=title,
-                    section=section,
-                    content_hash=content_hash(chunk),
-                    retrieved_at=now,
-                    url=source.url
-                ))
+                passages.append(
+                    RawPassage(
+                        source_id=source.id,
+                        content=chunk.strip(),
+                        title=title,
+                        section=section,
+                        content_hash=content_hash(chunk),
+                        retrieved_at=now,
+                        url=source.url,
+                    )
+                )
 
     elif source.path:
         # Local folder
@@ -282,21 +290,24 @@ def ingest_source(source: Source, settings: dict, robots: RobotsChecker) -> list
                     if len(chunk.strip()) < 50:
                         continue
 
-                    passages.append(RawPassage(
-                        source_id=source.id,
-                        content=chunk.strip(),
-                        title=title,
-                        section=f"Page {idx + 1}",
-                        content_hash=content_hash(chunk),
-                        retrieved_at=now,
-                        page_num=idx
-                    ))
+                    passages.append(
+                        RawPassage(
+                            source_id=source.id,
+                            content=chunk.strip(),
+                            title=title,
+                            section=f"Page {idx + 1}",
+                            content_hash=content_hash(chunk),
+                            retrieved_at=now,
+                            page_num=idx,
+                        )
+                    )
 
     log.info("Extracted %d passages from %s", len(passages), source.id)
     return passages
 
 
 # ---------- Database storage ----------
+
 
 def init_db(db_path: Path = DB_PATH) -> sqlite3.Connection:
     """Initialize SQLite database for passages."""
@@ -341,7 +352,7 @@ def store_passages(passages: list[RawPassage], conn: sqlite3.Connection) -> tupl
         # Check if exists
         existing = conn.execute(
             "SELECT id, content_hash, status FROM passages WHERE source_id = ? AND content_hash = ?",
-            (p.source_id, p.content_hash)
+            (p.source_id, p.content_hash),
         ).fetchone()
 
         if existing:
@@ -350,24 +361,35 @@ def store_passages(passages: list[RawPassage], conn: sqlite3.Connection) -> tupl
             # Check if same source has old version
             old = conn.execute(
                 "SELECT id FROM passages WHERE source_id = ? AND content = ?",
-                (p.source_id, p.content)
+                (p.source_id, p.content),
             ).fetchone()
 
             if old:
                 # Content hash changed but content same - update hash
                 conn.execute(
                     "UPDATE passages SET content_hash = ?, retrieved_at = ? WHERE id = ?",
-                    (p.content_hash, p.retrieved_at.isoformat(), old[0])
+                    (p.content_hash, p.retrieved_at.isoformat(), old[0]),
                 )
                 updated_count += 1
             else:
                 # New passage - mark as pending_review
-                conn.execute("""
+                conn.execute(
+                    """
                     INSERT INTO passages (source_id, content, title, section, content_hash,
                                          retrieved_at, url, page_num, status)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending_review')
-                """, (p.source_id, p.content, p.title, p.section, p.content_hash,
-                      p.retrieved_at.isoformat(), p.url, p.page_num))
+                """,
+                    (
+                        p.source_id,
+                        p.content,
+                        p.title,
+                        p.section,
+                        p.content_hash,
+                        p.retrieved_at.isoformat(),
+                        p.url,
+                        p.page_num,
+                    ),
+                )
                 new_count += 1
 
     conn.commit()
@@ -378,7 +400,7 @@ def approve_source(source_id: str, conn: sqlite3.Connection) -> int:
     """Approve all passages from a source. Returns count approved."""
     cursor = conn.execute(
         "UPDATE passages SET status = 'approved' WHERE source_id = ? AND status = 'pending_review'",
-        (source_id,)
+        (source_id,),
     )
     conn.commit()
     return cursor.rowcount
@@ -404,14 +426,19 @@ def get_status(conn: sqlite3.Connection) -> dict:
 
 # ---------- CLI ----------
 
+
 def main():
     """CLI entry point."""
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
     parser = argparse.ArgumentParser(description="Ingest regulatory documents")
-    parser.add_argument("command", nargs="?", default="ingest",
-                        choices=["ingest", "approve", "status"],
-                        help="Command to run")
+    parser.add_argument(
+        "command",
+        nargs="?",
+        default="ingest",
+        choices=["ingest", "approve", "status"],
+        help="Command to run",
+    )
     parser.add_argument("source_id", nargs="?", help="Source ID for approve command")
     parser.add_argument("--source", "-s", help="Specific source ID to ingest")
     args = parser.parse_args()

@@ -8,20 +8,23 @@ The instruction is a FUNCTION, not a string: ADK calls it every turn, so:
 Policy is deliberately NOT in here — see policy.py. The persona
 only says "always try the tool; the system decides".
 """
+
 import os
-from datetime import timedelta
 from pathlib import Path
-from typing import Optional
 
 from dotenv import load_dotenv
+
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 from google.adk.agents.readonly_context import ReadonlyContext
 
 from mortgage import tools
-from mortgage.personas.origination import MAC_INSTRUCTION, AGENT_NAME as MAC_NAME
-from mortgage.personas.servicing import IVY_INSTRUCTION, OBSERVER_SUGGESTIONS_FORMAT, AGENT_NAME as IVY_NAME
-from mortgage.personas.triage import SAM_INSTRUCTION, AGENT_NAME as SAM_NAME
+from mortgage.personas.origination import AGENT_NAME as MAC_NAME
+from mortgage.personas.origination import MAC_INSTRUCTION
+from mortgage.personas.servicing import AGENT_NAME as IVY_NAME
+from mortgage.personas.servicing import IVY_INSTRUCTION, OBSERVER_SUGGESTIONS_FORMAT
+from mortgage.personas.triage import AGENT_NAME as SAM_NAME
+from mortgage.personas.triage import SAM_INSTRUCTION
 
 # Default agent name for API (Sam is the default triage agent)
 AGENT_NAME = SAM_NAME
@@ -36,17 +39,17 @@ ACCENT AND LANGUAGE
 """
 
 
-def get_call_state(ctx: Optional[ReadonlyContext]):
+def get_call_state(ctx: ReadonlyContext | None):
     """Get the CallState for the current session."""
     if ctx is None:
         return None
 
-    session_id = getattr(ctx, 'session_id', None)
+    session_id = getattr(ctx, "session_id", None)
     if session_id is None:
         # Try to get from session object
-        session = getattr(ctx, 'session', None)
+        session = getattr(ctx, "session", None)
         if session:
-            session_id = getattr(session, 'id', None)
+            session_id = getattr(session, "id", None)
 
     if session_id:
         return tools.store.call(session_id)

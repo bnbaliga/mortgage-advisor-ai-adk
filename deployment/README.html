@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deployment Guide - HomeFirst AI Mortgage Advisor</title>
+    <style>
+        :root {
+            --primary-color: #1a5f7a;
+            --secondary-color: #2c8c99;
+            --accent-color: #57c5b6;
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --code-bg: #f1f5f9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.7;
+            color: var(--text-color);
+            background: var(--bg-color);
+            padding: 0;
+            margin: 0;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 40px 60px;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .header .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 40px 60px;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--primary-color);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        h1 { font-size: 2rem; border-bottom: 3px solid var(--accent-color); padding-bottom: 0.5rem; }
+        h2 { font-size: 1.6rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.4rem; }
+        h3 { font-size: 1.3rem; }
+        h4 { font-size: 1.1rem; }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        tr:nth-child(even) {
+            background: var(--bg-color);
+        }
+
+        tr:hover {
+            background: #e8f4f8;
+        }
+
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #c7254e;
+        }
+
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        blockquote {
+            border-left: 4px solid var(--accent-color);
+            padding-left: 20px;
+            margin: 1.5rem 0;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        ul, ol {
+            margin: 1rem 0 1rem 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        hr {
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-color), transparent);
+            margin: 2rem 0;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-left: 4px solid var(--secondary-color);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .success-box {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #64748b;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 40px;
+        }
+
+        .toc {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .toc h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-must { background: #fee2e2; color: #991b1b; }
+        .badge-should { background: #fef3c7; color: #92400e; }
+        .badge-could { background: #d1fae5; color: #065f46; }
+        .badge-accepted { background: #d1fae5; color: #065f46; }
+        .badge-proposed { background: #dbeafe; color: #1e40af; }
+
+        @media print {
+            .header { padding: 20px; }
+            .container { padding: 20px; }
+            pre { white-space: pre-wrap; }
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 20px; }
+            .header h1 { font-size: 1.8rem; }
+            .container { padding: 0 20px 40px; }
+            table { font-size: 0.9rem; }
+            th, td { padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">🏠</div>
+            <div>
+                <div style="font-weight: 600; font-size: 1.2rem;">HomeFirst AI</div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">Mortgage Advisor</div>
+            </div>
+        </div>
+        <h1>Deployment Guide</h1>
+        <div class="subtitle">Technical Documentation</div>
+    </div>
+
+    <div class="container">
+        <h1 id="deployment">Deployment</h1>
+        <p>This folder contains deployment configurations for the
+        Mortgage Advisor Voice AI.</p>
+        <h2 id="files">Files</h2>
+        <table>
+        <thead>
+        <tr>
+        <th>File</th>
+        <th>Description</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td><code>Dockerfile</code></td>
+        <td>Container image for Cloud Run deployment</td>
+        </tr>
+        <tr>
+        <td><code>docker-compose.yml</code></td>
+        <td>Local development with Docker</td>
+        </tr>
+        </tbody>
+        </table>
+        <h2 id="local-docker-development">Local Docker Development</h2>
+        <div class="sourceCode" id="cb1"><pre
+        class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># From project root</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> deployment</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">docker-compose</span> up <span class="at">--build</span></span></code></pre></div>
+        <p>Then open http://localhost:8000</p>
+        <h2 id="cloud-run-deployment">Cloud Run Deployment</h2>
+        <p>The CI/CD pipeline in
+        <code>.github/workflows/deploy.yml</code> automatically deploys
+        to Google Cloud Run on push to main branch.</p>
+        <h3 id="manual-deployment">Manual Deployment</h3>
+        <div class="sourceCode" id="cb2"><pre
+        class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Build and push</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">gcloud</span> builds submit <span class="at">--tag</span> gcr.io/PROJECT_ID/mortgage-advisor</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Deploy</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">gcloud</span> run deploy mortgage-advisor <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--image</span> gcr.io/PROJECT_ID/mortgage-advisor <span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">--platform</span> managed <span class="dt">\</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">--region</span> us-central1 <span class="dt">\</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">--allow-unauthenticated</span></span></code></pre></div>
+        <h2 id="environment-variables">Environment Variables</h2>
+        <table>
+        <colgroup>
+        <col style="width: 23%" />
+        <col style="width: 23%" />
+        <col style="width: 21%" />
+        <col style="width: 30%" />
+        </colgroup>
+        <thead>
+        <tr>
+        <th>Variable</th>
+        <th>Required</th>
+        <th>Default</th>
+        <th>Description</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td><code>GOOGLE_API_KEY</code></td>
+        <td>Yes</td>
+        <td>-</td>
+        <td>Gemini API key from AI Studio</td>
+        </tr>
+        <tr>
+        <td><code>GOOGLE_GENAI_USE_VERTEXAI</code></td>
+        <td>No</td>
+        <td>FALSE</td>
+        <td>Use Vertex AI instead of AI Studio</td>
+        </tr>
+        <tr>
+        <td><code>LIVE_MODEL</code></td>
+        <td>No</td>
+        <td>gemini-3.1-flash-live-preview</td>
+        <td>Gemini Live model</td>
+        </tr>
+        <tr>
+        <td><code>MORTGAGE_VOICE</code></td>
+        <td>No</td>
+        <td>Aoede</td>
+        <td>TTS voice name</td>
+        </tr>
+        <tr>
+        <td><code>MORTGAGE_GREETING</code></td>
+        <td>No</td>
+        <td>1</td>
+        <td>Auto-greet on call connect</td>
+        </tr>
+        </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p>HomeFirst AI Mortgage Advisor &copy; 2026 | Confidential</p>
+        <p>Generated from project documentation</p>
+    </div>
+</body>
+</html>

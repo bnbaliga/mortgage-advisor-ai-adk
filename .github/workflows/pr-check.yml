@@ -1,0 +1,72 @@
+# Pull Request Checks
+# Additional checks specific to PRs
+
+name: PR Check
+
+on:
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  # Ensure PR title follows conventional commits
+  pr-title:
+    name: PR Title Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          requireScope: false
+
+  # Check for large file additions
+  file-size:
+    name: File Size Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for large files
+        run: |
+          # Check for files larger than 1MB
+          LARGE_FILES=$(find . -type f -size +1M -not -path "./.git/*" -not -name "*.db")
+          if [ -n "$LARGE_FILES" ]; then
+            echo "Large files detected:"
+            echo "$LARGE_FILES"
+            echo "Consider using Git LFS for large files"
+          fi
+
+  # Documentation check
+  docs-check:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for documentation updates
+        run: |
+          # If Python files changed, remind about docs
+          PYTHON_CHANGES=$(git diff --name-only origin/master...HEAD | grep -E '\.py$' || true)
+          if [ -n "$PYTHON_CHANGES" ]; then
+            echo "Python files changed:"
+            echo "$PYTHON_CHANGES"
+            echo ""
+            echo "Remember to update documentation if needed!"
+          fi

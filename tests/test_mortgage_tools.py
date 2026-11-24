@@ -1,4 +1,5 @@
 """Tests for mortgage tool functions and store methods."""
+
 import asyncio
 from datetime import datetime, time
 from types import SimpleNamespace
@@ -40,6 +41,7 @@ def run(coro):
 
 # --- get_company_info tests ---
 
+
 class TestGetCompanyInfo:
     """Tests for get_company_info tool."""
 
@@ -76,6 +78,7 @@ class TestGetCompanyInfo:
 
 
 # --- get_available_officers tests ---
+
 
 class TestGetAvailableOfficers:
     """Tests for get_available_officers method."""
@@ -170,6 +173,7 @@ class TestGetAvailableOfficers:
 
 # --- check_heloc_eligibility note format tests ---
 
+
 class TestHelocEligibilityNote:
     """Tests for check_heloc_eligibility note format."""
 
@@ -202,10 +206,15 @@ class TestHelocEligibilityNote:
         result = store.check_heloc_eligibility("CA", "primary")
 
         # California has no closing_notice_days in the data
-        assert "note" not in result or result.get("note") is None or "notice" not in result.get("note", "").lower()
+        assert (
+            "note" not in result
+            or result.get("note") is None
+            or "notice" not in result.get("note", "").lower()
+        )
 
 
 # --- LoanOfficer dataclass tests ---
+
 
 class TestLoanOfficerDataclass:
     """Tests for LoanOfficer dataclass with hours and timezone."""
@@ -234,6 +243,7 @@ class TestLoanOfficerDataclass:
 
 
 # --- State regulations source and last_reviewed tests ---
+
 
 class TestStateRegulationsMetadata:
     """Tests for state regulations metadata fields."""

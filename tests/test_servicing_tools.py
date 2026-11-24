@@ -1,24 +1,24 @@
 """Tests for servicing tool functions and database operations."""
+
 import asyncio
 import tempfile
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-from mortgage.database import ServicingDatabase, get_servicing_db, use_servicing_db
-from mortgage.mortgage import CallState, IdentityStrength, MortgageStore
+from mortgage import servicing_tools, tools
+from mortgage.database import ServicingDatabase, use_servicing_db
+from mortgage.mortgage import IdentityStrength, MortgageStore
 from mortgage.servicing import (
     DelinquencyStage,
     DelinquencyStatus,
     LoanAccount,
     PaymentMethod,
     PaymentMethodType,
-    PaymentStatus,
 )
-from mortgage import tools, servicing_tools
 
 
 def run(coro):
@@ -72,6 +72,7 @@ def strongly_verified_ctx(store, ctx, temp_db):
 
 
 # --- Database Tests ---
+
 
 class TestServicingDatabase:
     """Tests for the ServicingDatabase class."""
@@ -129,7 +130,7 @@ class TestServicingDatabase:
             institution_name="Test Bank",
             nickname="Test Card",
             is_default=False,
-            token="tok_test_9999"
+            token="tok_test_9999",
         )
         result = temp_db.add_payment_method(method)
         assert result.id.startswith("PM")
@@ -142,6 +143,7 @@ class TestServicingDatabase:
 
 
 # --- Servicing Tools Tests ---
+
 
 class TestGetLoanBalance:
     """Tests for get_loan_balance tool."""
@@ -259,19 +261,17 @@ class TestMakePayment:
 
     def test_prepare_payment_requires_strong_verification(self, verified_ctx, temp_db):
         """prepare_payment requires strong verification."""
-        result = run(servicing_tools.prepare_payment(
-            amount=923.33,
-            tool_context=verified_ctx
-        ))
+        result = run(servicing_tools.prepare_payment(amount=923.33, tool_context=verified_ctx))
         assert result["result"] == "error"
         assert result["code"] == "need_strong_verification"
 
-    def test_prepare_payment_sets_pending_authorization(self, strongly_verified_ctx, temp_db, store):
+    def test_prepare_payment_sets_pending_authorization(
+        self, strongly_verified_ctx, temp_db, store
+    ):
         """prepare_payment sets up pending authorization."""
-        result = run(servicing_tools.prepare_payment(
-            amount=923.33,
-            tool_context=strongly_verified_ctx
-        ))
+        result = run(
+            servicing_tools.prepare_payment(amount=923.33, tool_context=strongly_verified_ctx)
+        )
         assert result["result"] == "ok"
         assert result["status"] == "pending_authorization"
 
@@ -282,26 +282,23 @@ class TestMakePayment:
     def test_confirm_payment_requires_pending(self, strongly_verified_ctx, temp_db, store):
         """confirm_payment requires a pending payment."""
         # No pending payment
-        result = run(servicing_tools.confirm_payment(
-            authorized=True,
-            tool_context=strongly_verified_ctx
-        ))
+        result = run(
+            servicing_tools.confirm_payment(authorized=True, tool_context=strongly_verified_ctx)
+        )
         assert result["result"] == "error"
         assert result["code"] == "no_payment_pending"
 
-    def test_confirm_payment_processes_with_authorization(self, strongly_verified_ctx, temp_db, store):
+    def test_confirm_payment_processes_with_authorization(
+        self, strongly_verified_ctx, temp_db, store
+    ):
         """confirm_payment processes when authorized."""
         # First prepare a payment
-        run(servicing_tools.prepare_payment(
-            amount=923.33,
-            tool_context=strongly_verified_ctx
-        ))
+        run(servicing_tools.prepare_payment(amount=923.33, tool_context=strongly_verified_ctx))
 
         # Then confirm it
-        result = run(servicing_tools.confirm_payment(
-            authorized=True,
-            tool_context=strongly_verified_ctx
-        ))
+        result = run(
+            servicing_tools.confirm_payment(authorized=True, tool_context=strongly_verified_ctx)
+        )
         assert result["result"] == "ok"
         assert "confirmation_number" in result
 
@@ -309,19 +306,17 @@ class TestMakePayment:
         call = store.call(strongly_verified_ctx.session.id)
         assert call.pending_authorization is None
 
-    def test_confirm_payment_cancels_without_authorization(self, strongly_verified_ctx, temp_db, store):
+    def test_confirm_payment_cancels_without_authorization(
+        self, strongly_verified_ctx, temp_db, store
+    ):
         """confirm_payment cancels when not authorized."""
         # First prepare a payment
-        run(servicing_tools.prepare_payment(
-            amount=923.33,
-            tool_context=strongly_verified_ctx
-        ))
+        run(servicing_tools.prepare_payment(amount=923.33, tool_context=strongly_verified_ctx))
 
         # Then cancel it
-        result = run(servicing_tools.confirm_payment(
-            authorized=False,
-            tool_context=strongly_verified_ctx
-        ))
+        result = run(
+            servicing_tools.confirm_payment(authorized=False, tool_context=strongly_verified_ctx)
+        )
         assert result["result"] == "cancelled"
 
         # Authorization should be cleared
@@ -330,6 +325,7 @@ class TestMakePayment:
 
 
 # --- Data Model Tests ---
+
 
 class TestLoanAccount:
     """Tests for LoanAccount dataclass."""
@@ -352,7 +348,7 @@ class TestLoanAccount:
             next_due_date=date.today(),
             escrow_balance=Decimal("1000"),
             origination_date=date.today(),
-            last_payment_date=date.today()
+            last_payment_date=date.today(),
         )
 
         # Payoff on same day should be close to balance
@@ -376,7 +372,7 @@ class TestLoanAccount:
             payment_day=1,
             next_due_date=date.today(),
             escrow_balance=Decimal("0"),
-            origination_date=date.today()
+            origination_date=date.today(),
         )
 
         payment = loan.calculate_monthly_payment()

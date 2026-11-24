@@ -28,8 +28,104 @@ exclude = ["tests*", "wiki*", "assets*", "frontend*", "docs*"]
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "pre-commit>=4.0",
+    "matplotlib>=3.11.2",
+    "pillow>=13.0.0",
 ]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "--cov=mortgage --cov-report=term-missing --cov-report=html"
+
+# Ruff configuration (fast Python linter + formatter)
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["mortgage", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+    "ASYNC",  # flake8-async
+    # "S",    # flake8-bandit (security) - disabled for existing code
+]
+ignore = [
+    "E402",   # Allow imports after statements (dotenv pattern)
+    "E501",   # Allow long lines (existing code)
+    "S101",   # Allow assert in tests
+    "B008",   # Allow function calls in defaults (FastAPI Depends)
+    "ARG001", # Allow unused function arguments (callbacks)
+    "F841",   # Allow unused variables (existing code)
+    "SIM102", # Allow nested if statements (existing code)
+    "SIM105", # Allow try-except-pass (existing code)
+    "B007",   # Allow unused loop variables (existing code)
+    "C416",   # Allow dict comprehensions (existing code style)
+    "ASYNC220", # Allow blocking calls in async (existing code)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "ARG", "E501"]  # Allow asserts, unused args, long lines in tests
+"mortgage/knowledge/*" = ["S608"]    # Allow SQL construction in knowledge module
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# MyPy configuration (type checking)
+# Note: Running in lenient mode for existing code. Enable stricter checks gradually.
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = false
+warn_unused_ignores = false
+disallow_untyped_defs = false          # Existing code lacks annotations
+disallow_incomplete_defs = false       # Allow partial annotations
+check_untyped_defs = false             # Don't check untyped functions
+ignore_missing_imports = true
+strict_optional = false                 # Allow implicit None
+show_error_codes = true
+# Disable specific error codes that affect existing code
+disable_error_code = [
+    "arg-type",        # Argument type mismatches (many in existing code)
+    "attr-defined",    # Attribute access on generic types
+    "var-annotated",   # Missing variable annotations
+    "assignment",      # Type assignment mismatches
+    "list-item",       # List item type mismatches
+]
+# To enable strict checking later, remove disable_error_code and set above to true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["mortgage"]
+branch = true
+omit = [
+    "mortgage/frontend/*",
+    "mortgage/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
+fail_under = 50  # Minimum threshold; server/routing modules require integration tests
+show_missing = true

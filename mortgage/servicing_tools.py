@@ -12,27 +12,25 @@ These tools require different verification levels:
 - BASIC: get_loan_balance, get_payment_history
 - STRONG: change_payment_date, setup_autopay, make_payment
 """
+
 from __future__ import annotations
 
 import uuid
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional
 
 from google.adk.tools.tool_context import ToolContext
 
+# Import tools module to access store dynamically (not at module load time)
+from mortgage import tools
 from mortgage.database import get_servicing_db
-from mortgage.mortgage import CallState, IdentityStrength, MortgageStore, format_currency
+from mortgage.mortgage import CallState, format_currency
 from mortgage.servicing import (
     PaymentHistory,
     PaymentMethod,
     PaymentMethodType,
-    PaymentSchedule,
     PaymentStatus,
 )
-
-# Import tools module to access store dynamically (not at module load time)
-from mortgage import tools
 
 
 def _get_call(tool_context: ToolContext) -> CallState:
@@ -52,6 +50,7 @@ def _new_ref() -> str:
 
 # ------------------------------------------------------------- Balance & Info ---
 
+
 async def get_loan_balance(tool_context: ToolContext) -> dict:
     """Get the current loan balance and next payment due.
 
@@ -61,15 +60,21 @@ async def get_loan_balance(tool_context: ToolContext) -> dict:
     call = _get_call(tool_context)
 
     if not call.verified_customer_id:
-        return _err("not_verified", "Customer not verified",
-                    "Ask for their name and the last 4 digits of their phone number to pull up their account.")
+        return _err(
+            "not_verified",
+            "Customer not verified",
+            "Ask for their name and the last 4 digits of their phone number to pull up their account.",
+        )
 
     db = get_servicing_db()
     loan = db.get_loan_by_customer(call.verified_customer_id)
 
     if not loan:
-        return _err("no_loan", "No active loan found",
-                    "Let them know you couldn't find an active loan and offer to connect with a loan officer.")
+        return _err(
+            "no_loan",
+            "No active loan found",
+            "Let them know you couldn't find an active loan and offer to connect with a loan officer.",
+        )
 
     # Store the verified loan ID for other tools
     call.verified_loan_id = loan.id
@@ -101,10 +106,14 @@ async def get_loan_balance(tool_context: ToolContext) -> dict:
         result["days_past_due"] = delinquency.days_past_due
         result["amount_past_due"] = format_currency(float(delinquency.amount_past_due))
         result["delinquency_stage"] = delinquency.stage.value
-        result["say"] = ("Let them know they have a past due balance. Be empathetic and offer to "
-                        "discuss payment options or set up a payment today.")
+        result["say"] = (
+            "Let them know they have a past due balance. Be empathetic and offer to "
+            "discuss payment options or set up a payment today."
+        )
     else:
-        result["say"] = "Share the balance and next payment info. If they make manual payments, suggest autopay for convenience."
+        result["say"] = (
+            "Share the balance and next payment info. If they make manual payments, suggest autopay for convenience."
+        )
 
     return result
 
@@ -120,8 +129,11 @@ async def get_payment_history(limit: int = 6, tool_context: ToolContext = None) 
     call = _get_call(tool_context)
 
     if not call.verified_customer_id:
-        return _err("not_verified", "Customer not verified",
-                    "Ask for their name and the last 4 digits of their phone number first.")
+        return _err(
+            "not_verified",
+            "Customer not verified",
+            "Ask for their name and the last 4 digits of their phone number first.",
+        )
 
     db = get_servicing_db()
     loan = db.get_loan_by_customer(call.verified_customer_id)
@@ -136,24 +148,26 @@ async def get_payment_history(limit: int = 6, tool_context: ToolContext = None) 
         return {
             "result": "ok",
             "payments": [],
-            "say": "Let them know you don't see any recent payments on record."
+            "say": "Let them know you don't see any recent payments on record.",
         }
 
     payment_list = []
     for p in payments:
-        payment_list.append({
-            "date": p.payment_date.strftime("%B %d, %Y"),
-            "amount": format_currency(float(p.amount)),
-            "method": f"...{p.payment_method_last_four}",
-            "status": p.status.value,
-            "confirmation": p.confirmation_number
-        })
+        payment_list.append(
+            {
+                "date": p.payment_date.strftime("%B %d, %Y"),
+                "amount": format_currency(float(p.amount)),
+                "method": f"...{p.payment_method_last_four}",
+                "status": p.status.value,
+                "confirmation": p.confirmation_number,
+            }
+        )
 
     return {
         "result": "ok",
         "payments": payment_list,
         "total_shown": len(payment_list),
-        "say": "Share the recent payment history. Note any missed or late payments if present."
+        "say": "Share the recent payment history. Note any missed or late payments if present.",
     }
 
 
@@ -186,13 +200,16 @@ async def get_payoff_quote(good_through_days: int = 10, tool_context: ToolContex
         "payoff_amount": format_currency(float(payoff_amount)),
         "good_through_date": good_through_date.strftime("%B %d, %Y"),
         "current_balance": format_currency(float(loan.current_balance)),
-        "daily_interest": format_currency(float(loan.current_balance * loan.interest_rate / Decimal("36500"))),
+        "daily_interest": format_currency(
+            float(loan.current_balance * loan.interest_rate / Decimal("36500"))
+        ),
         "note": "This is an estimated payoff. For an official payoff statement, contact our payoff department.",
-        "say": "Give them the payoff amount and the good-through date. Mention it's an estimate and daily interest accrues."
+        "say": "Give them the payoff amount and the good-through date. Mention it's an estimate and daily interest accrues.",
     }
 
 
 # ------------------------------------------------------------- Payment Date Changes ---
+
 
 async def change_payment_date(new_payment_day: int, tool_context: ToolContext = None) -> dict:
     """Change the monthly payment due date.
@@ -205,12 +222,18 @@ async def change_payment_date(new_payment_day: int, tool_context: ToolContext = 
     call = _get_call(tool_context)
 
     if not call.is_verified_strong:
-        return _err("need_strong_verification", "Strong verification required",
-                    "For security, ask them to confirm their date of birth and approximate loan balance.")
+        return _err(
+            "need_strong_verification",
+            "Strong verification required",
+            "For security, ask them to confirm their date of birth and approximate loan balance.",
+        )
 
     if not (1 <= new_payment_day <= 28):
-        return _err("invalid_day", "Payment day must be between 1 and 28",
-                    "Ask them which day between the 1st and 28th they'd like their payment due.")
+        return _err(
+            "invalid_day",
+            "Payment day must be between 1 and 28",
+            "Ask them which day between the 1st and 28th they'd like their payment due.",
+        )
 
     db = get_servicing_db()
     loan = db.get_loan_by_customer(call.verified_customer_id)
@@ -244,11 +267,12 @@ async def change_payment_date(new_payment_day: int, tool_context: ToolContext = 
         "next_due_date": new_due.strftime("%B %d, %Y"),
         "next_payment": format_currency(float(loan.monthly_payment)),
         "say": f"Confirm the due date has been changed from the {old_day}th to the {new_payment_day}th. "
-               f"Their next payment of {format_currency(float(loan.monthly_payment))} is due {new_due.strftime('%B %d')}."
+        f"Their next payment of {format_currency(float(loan.monthly_payment))} is due {new_due.strftime('%B %d')}.",
     }
 
 
 # ------------------------------------------------------------- Autopay Management ---
+
 
 async def get_autopay_status(tool_context: ToolContext = None) -> dict:
     """Check if autopay is enabled and which payment method is used.
@@ -270,7 +294,7 @@ async def get_autopay_status(tool_context: ToolContext = None) -> dict:
         return {
             "result": "ok",
             "autopay_enabled": False,
-            "say": "Let them know autopay is not currently set up. Offer to enable it for them."
+            "say": "Let them know autopay is not currently set up. Offer to enable it for them.",
         }
 
     # Get the autopay payment method
@@ -304,8 +328,11 @@ async def setup_autopay(payment_method_id: str = "", tool_context: ToolContext =
     call = _get_call(tool_context)
 
     if not call.is_verified_strong:
-        return _err("need_strong_verification", "Strong verification required",
-                    "For security, ask them to confirm their date of birth and approximate loan balance.")
+        return _err(
+            "need_strong_verification",
+            "Strong verification required",
+            "For security, ask them to confirm their date of birth and approximate loan balance.",
+        )
 
     db = get_servicing_db()
     loan = db.get_loan_by_customer(call.verified_customer_id)
@@ -320,8 +347,11 @@ async def setup_autopay(payment_method_id: str = "", tool_context: ToolContext =
         method = db.get_default_payment_method(call.verified_customer_id)
 
     if not method:
-        return _err("no_payment_method", "No payment method found",
-                    "Ask them to add a payment method first, or check if they have a card or bank account to set up.")
+        return _err(
+            "no_payment_method",
+            "No payment method found",
+            "Ask them to add a payment method first, or check if they have a card or bank account to set up.",
+        )
 
     # Enable autopay
     loan.autopay_enabled = True
@@ -339,7 +369,7 @@ async def setup_autopay(payment_method_id: str = "", tool_context: ToolContext =
         "payment_day": loan.payment_day,
         "amount": format_currency(float(loan.monthly_payment)),
         "say": f"Confirm autopay is now set up. Payments of {format_currency(float(loan.monthly_payment))} "
-               f"will be automatically drafted on the {loan.payment_day}th of each month from {method.display_name()}."
+        f"will be automatically drafted on the {loan.payment_day}th of each month from {method.display_name()}.",
     }
 
 
@@ -351,8 +381,11 @@ async def cancel_autopay(tool_context: ToolContext = None) -> dict:
     call = _get_call(tool_context)
 
     if not call.is_verified_strong:
-        return _err("need_strong_verification", "Strong verification required",
-                    "For security, ask them to confirm their date of birth and approximate loan balance.")
+        return _err(
+            "need_strong_verification",
+            "Strong verification required",
+            "For security, ask them to confirm their date of birth and approximate loan balance.",
+        )
 
     db = get_servicing_db()
     loan = db.get_loan_by_customer(call.verified_customer_id)
@@ -364,7 +397,7 @@ async def cancel_autopay(tool_context: ToolContext = None) -> dict:
         return {
             "result": "ok",
             "message": "Autopay was not enabled",
-            "say": "Let them know autopay was already off."
+            "say": "Let them know autopay was already off.",
         }
 
     # Clear autopay on the method if set
@@ -384,12 +417,13 @@ async def cancel_autopay(tool_context: ToolContext = None) -> dict:
         "autopay_enabled": False,
         "next_due_date": loan.next_due_date.strftime("%B %d, %Y"),
         "say": f"Confirm autopay has been cancelled. Remind them their next payment of "
-               f"{format_currency(float(loan.monthly_payment))} is due {loan.next_due_date.strftime('%B %d')} "
-               f"and they'll need to make it manually."
+        f"{format_currency(float(loan.monthly_payment))} is due {loan.next_due_date.strftime('%B %d')} "
+        f"and they'll need to make it manually.",
     }
 
 
 # ------------------------------------------------------------- Payment Methods ---
+
 
 async def get_payment_methods(tool_context: ToolContext = None) -> dict:
     """Get all payment methods on file for the customer.
@@ -408,28 +442,32 @@ async def get_payment_methods(tool_context: ToolContext = None) -> dict:
         return {
             "result": "ok",
             "methods": [],
-            "say": "Let them know there are no payment methods on file. Offer to add one."
+            "say": "Let them know there are no payment methods on file. Offer to add one.",
         }
 
     method_list = []
     for m in methods:
-        method_list.append({
-            "id": m.id,
-            "type": m.method_type.value,
-            "display": m.display_name(),
-            "last_four": m.last_four,
-            "is_default": m.is_default,
-            "is_autopay": m.is_autopay
-        })
+        method_list.append(
+            {
+                "id": m.id,
+                "type": m.method_type.value,
+                "display": m.display_name(),
+                "last_four": m.last_four,
+                "is_default": m.is_default,
+                "is_autopay": m.is_autopay,
+            }
+        )
 
     return {
         "result": "ok",
         "methods": method_list,
-        "say": "Read back the payment methods on file. Note which is default and which is used for autopay."
+        "say": "Read back the payment methods on file. Note which is default and which is used for autopay.",
     }
 
 
-async def initiate_secure_card_capture(card_type: str = "debit", tool_context: ToolContext = None) -> dict:
+async def initiate_secure_card_capture(
+    card_type: str = "debit", tool_context: ToolContext = None
+) -> dict:
     """Initiate secure DTMF keypad capture for card number entry.
 
     Args:
@@ -444,8 +482,11 @@ async def initiate_secure_card_capture(card_type: str = "debit", tool_context: T
     call = _get_call(tool_context)
 
     if not call.is_verified_strong:
-        return _err("need_strong_verification", "Strong verification required",
-                    "For security, ask them to confirm their date of birth and approximate loan balance first.")
+        return _err(
+            "need_strong_verification",
+            "Strong verification required",
+            "For security, ask them to confirm their date of birth and approximate loan balance first.",
+        )
 
     # Set up secure capture state
     call.secure_capture_pending = True
@@ -461,18 +502,15 @@ async def initiate_secure_card_capture(card_type: str = "debit", tool_context: T
         "instructions": [
             "Please enter your 16-digit card number on your phone keypad now.",
             "Then enter the 4-digit expiration as month and year.",
-            "Finally, enter the 3-digit security code."
+            "Finally, enter the 3-digit security code.",
         ],
         "say": "Ask them to enter their 16-digit card number using their phone keypad. "
-               "Explain this is for security - you won't hear the numbers."
+        "Explain this is for security - you won't hear the numbers.",
     }
 
 
 async def complete_secure_card_capture(
-    card_network: str,
-    last_four: str,
-    expiration: str,
-    tool_context: ToolContext = None
+    card_network: str, last_four: str, expiration: str, tool_context: ToolContext = None
 ) -> dict:
     """Complete the secure card capture with tokenized result.
 
@@ -489,8 +527,9 @@ async def complete_secure_card_capture(
     call = _get_call(tool_context)
 
     if not call.secure_capture_pending:
-        return _err("no_capture", "No secure capture in progress",
-                    "Start the card capture process first.")
+        return _err(
+            "no_capture", "No secure capture in progress", "Start the card capture process first."
+        )
 
     # Create the payment method
     db = get_servicing_db()
@@ -509,7 +548,7 @@ async def complete_secure_card_capture(
         is_autopay=False,
         token=token,
         expiration_date=expiration,
-        created_at=datetime.now()
+        created_at=datetime.now(),
     )
 
     method = db.add_payment_method(method)
@@ -522,7 +561,7 @@ async def complete_secure_card_capture(
         "last_four": last_four,
         "expiration": expiration,
         "say": f"Confirm you've captured the {card_network} card ending in {last_four}. "
-               "Ask if they'd like to use this card to make a payment or set up autopay."
+        "Ask if they'd like to use this card to make a payment or set up autopay.",
     }
 
 
@@ -532,7 +571,7 @@ async def add_bank_account(
     account_last_four: str,
     bank_name: str,
     nickname: str = "",
-    tool_context: ToolContext = None
+    tool_context: ToolContext = None,
 ) -> dict:
     """Add a bank account as a payment method.
 
@@ -553,12 +592,19 @@ async def add_bank_account(
 
     # Validate routing number format
     if len(routing_number) != 9 or not routing_number.isdigit():
-        return _err("invalid_routing", "Routing number must be 9 digits",
-                    "Ask them for the 9-digit routing number from their check or bank statement.")
+        return _err(
+            "invalid_routing",
+            "Routing number must be 9 digits",
+            "Ask them for the 9-digit routing number from their check or bank statement.",
+        )
 
     db = get_servicing_db()
 
-    method_type = PaymentMethodType.CHECKING if account_type.lower() == "checking" else PaymentMethodType.SAVINGS
+    method_type = (
+        PaymentMethodType.CHECKING
+        if account_type.lower() == "checking"
+        else PaymentMethodType.SAVINGS
+    )
 
     # Generate a mock token
     token = f"tok_ach_{routing_number[-4:]}_{account_last_four}_{uuid.uuid4().hex[:8]}"
@@ -574,7 +620,7 @@ async def add_bank_account(
         is_autopay=False,
         token=token,
         expiration_date=None,
-        created_at=datetime.now()
+        created_at=datetime.now(),
     )
 
     method = db.add_payment_method(method)
@@ -586,11 +632,13 @@ async def add_bank_account(
         "account_type": account_type,
         "last_four": account_last_four,
         "say": f"Confirm the {bank_name} {account_type} account ending in {account_last_four} has been added. "
-               "Ask if they'd like to use this account to make a payment or set up autopay."
+        "Ask if they'd like to use this account to make a payment or set up autopay.",
     }
 
 
-async def set_default_payment_method(payment_method_id: str, tool_context: ToolContext = None) -> dict:
+async def set_default_payment_method(
+    payment_method_id: str, tool_context: ToolContext = None
+) -> dict:
     """Set a payment method as the default.
 
     Args:
@@ -614,7 +662,7 @@ async def set_default_payment_method(payment_method_id: str, tool_context: ToolC
     return {
         "result": "ok",
         "default_method": method.display_name(),
-        "say": f"Confirm the {method.display_name()} is now the default payment method."
+        "say": f"Confirm the {method.display_name()} is now the default payment method.",
     }
 
 
@@ -639,8 +687,11 @@ async def remove_payment_method(payment_method_id: str, tool_context: ToolContex
         return _err("not_found", "Payment method not found", "")
 
     if method.is_autopay:
-        return _err("autopay_active", "Cannot remove autopay payment method",
-                    "Let them know they need to cancel autopay or change to a different method first.")
+        return _err(
+            "autopay_active",
+            "Cannot remove autopay payment method",
+            "Let them know they need to cancel autopay or change to a different method first.",
+        )
 
     display_name = method.display_name()
     db.delete_payment_method(payment_method_id)
@@ -648,17 +699,18 @@ async def remove_payment_method(payment_method_id: str, tool_context: ToolContex
     return {
         "result": "ok",
         "removed": display_name,
-        "say": f"Confirm the {display_name} has been removed from their account."
+        "say": f"Confirm the {display_name} has been removed from their account.",
     }
 
 
 # ------------------------------------------------------------- Make Payment ---
 
+
 async def prepare_payment(
     amount: float,
     payment_date: str = "",
     payment_method_id: str = "",
-    tool_context: ToolContext = None
+    tool_context: ToolContext = None,
 ) -> dict:
     """Prepare a one-time payment for authorization.
 
@@ -673,8 +725,11 @@ async def prepare_payment(
     call = _get_call(tool_context)
 
     if not call.is_verified_strong:
-        return _err("need_strong_verification", "Strong verification required",
-                    "For security, ask them to confirm their date of birth and approximate loan balance.")
+        return _err(
+            "need_strong_verification",
+            "Strong verification required",
+            "For security, ask them to confirm their date of birth and approximate loan balance.",
+        )
 
     db = get_servicing_db()
     loan = db.get_loan_by_customer(call.verified_customer_id)
@@ -684,8 +739,9 @@ async def prepare_payment(
 
     # Validate amount
     if amount <= 0:
-        return _err("invalid_amount", "Payment amount must be positive",
-                    "Ask them for the payment amount.")
+        return _err(
+            "invalid_amount", "Payment amount must be positive", "Ask them for the payment amount."
+        )
 
     # Get payment method
     if payment_method_id:
@@ -694,16 +750,22 @@ async def prepare_payment(
         method = db.get_default_payment_method(call.verified_customer_id)
 
     if not method:
-        return _err("no_payment_method", "No payment method found",
-                    "Ask them to add a payment method first.")
+        return _err(
+            "no_payment_method",
+            "No payment method found",
+            "Ask them to add a payment method first.",
+        )
 
     # Parse payment date
     if payment_date:
         try:
             pay_date = date.fromisoformat(payment_date)
         except ValueError:
-            return _err("invalid_date", "Invalid date format",
-                        "Ask for the date in month, day, year format.")
+            return _err(
+                "invalid_date",
+                "Invalid date format",
+                "Ask for the date in month, day, year format.",
+            )
     else:
         pay_date = date.today()
 
@@ -714,7 +776,7 @@ async def prepare_payment(
         "payment_method_id": method.id,
         "payment_method_display": method.display_name(),
         "payment_method_last_four": method.last_four,
-        "loan_id": loan.id
+        "loan_id": loan.id,
     }
     call.authorization_confirmed = False
 
@@ -726,7 +788,7 @@ async def prepare_payment(
         "payment_method": method.display_name(),
         "payment_method_last_four": method.last_four,
         "say": f"Read back: 'To confirm: I'll charge {format_currency(amount)} to the account ending in "
-               f"{method.last_four} on {pay_date.strftime('%B %d, %Y')}. Do I have your authorization to proceed?'"
+        f"{method.last_four} on {pay_date.strftime('%B %d, %Y')}. Do I have your authorization to proceed?'",
     }
 
 
@@ -742,8 +804,11 @@ async def confirm_payment(authorized: bool = False, tool_context: ToolContext = 
     call = _get_call(tool_context)
 
     if not call.pending_authorization:
-        return _err("no_payment_pending", "No payment prepared",
-                    "Call prepare_payment first to set up the payment details.")
+        return _err(
+            "no_payment_pending",
+            "No payment prepared",
+            "Call prepare_payment first to set up the payment details.",
+        )
 
     if not authorized:
         # Clear the pending authorization
@@ -752,7 +817,7 @@ async def confirm_payment(authorized: bool = False, tool_context: ToolContext = 
         return {
             "result": "cancelled",
             "amount": format_currency(auth["amount"]),
-            "say": "Let them know the payment was cancelled. Ask if they'd like to try again or do something else."
+            "say": "Let them know the payment was cancelled. Ask if they'd like to try again or do something else.",
         }
 
     # Process the payment
@@ -783,7 +848,7 @@ async def confirm_payment(authorized: bool = False, tool_context: ToolContext = 
         payment_method_id=auth["payment_method_id"],
         payment_method_last_four=auth["payment_method_last_four"],
         status=PaymentStatus.COMPLETED if pay_date == date.today() else PaymentStatus.SCHEDULED,
-        confirmation_number=""
+        confirmation_number="",
     )
 
     payment = db.add_payment(payment)
@@ -804,9 +869,9 @@ async def confirm_payment(authorized: bool = False, tool_context: ToolContext = 
         "payment_date": pay_date.strftime("%B %d, %Y"),
         "new_balance": format_currency(float(loan.current_balance)),
         "say": f"Confirm the payment: 'Your payment of {format_currency(float(amount))} has been "
-               f"{'processed' if pay_date == date.today() else 'scheduled'}. "
-               f"Your confirmation number is {payment.confirmation_number}. "
-               f"Is there anything else I can help with?'"
+        f"{'processed' if pay_date == date.today() else 'scheduled'}. "
+        f"Your confirmation number is {payment.confirmation_number}. "
+        f"Is there anything else I can help with?'",
     }
 
 
@@ -817,15 +882,12 @@ SERVICING_TOOLS = [
     get_loan_balance,
     get_payment_history,
     get_payoff_quote,
-
     # Payment Date
     change_payment_date,
-
     # Autopay
     get_autopay_status,
     setup_autopay,
     cancel_autopay,
-
     # Payment Methods
     get_payment_methods,
     initiate_secure_card_capture,
@@ -833,7 +895,6 @@ SERVICING_TOOLS = [
     add_bank_account,
     set_default_payment_method,
     remove_payment_method,
-
     # Payments
     prepare_payment,
     confirm_payment,

@@ -1,4 +1,5 @@
 """Tests for mortgage policy enforcement — mortgage_gate and audit callbacks."""
+
 import asyncio
 from datetime import datetime
 from types import SimpleNamespace
@@ -35,16 +36,19 @@ def tool(name):
 
 # --- mortgage_gate tests ---
 
+
 class TestMortgageGateInputValidation:
     """Tests for input validation in mortgage_gate."""
 
     def test_credit_score_too_low_blocked(self, store, ctx):
         """get_rate_estimate blocked if credit_score < 300."""
-        result = run(policy.mortgage_gate(
-            tool("get_rate_estimate"),
-            {"product_type": "conventional_30", "credit_score": 200, "loan_to_value": 80},
-            ctx
-        ))
+        result = run(
+            policy.mortgage_gate(
+                tool("get_rate_estimate"),
+                {"product_type": "conventional_30", "credit_score": 200, "loan_to_value": 80},
+                ctx,
+            )
+        )
         assert result is not None
         assert result["result"] == "blocked"
         assert result["code"] == "missing_inputs"
@@ -52,11 +56,13 @@ class TestMortgageGateInputValidation:
 
     def test_credit_score_too_high_blocked(self, store, ctx):
         """get_rate_estimate blocked if credit_score > 850."""
-        result = run(policy.mortgage_gate(
-            tool("get_rate_estimate"),
-            {"product_type": "conventional_30", "credit_score": 900, "loan_to_value": 80},
-            ctx
-        ))
+        result = run(
+            policy.mortgage_gate(
+                tool("get_rate_estimate"),
+                {"product_type": "conventional_30", "credit_score": 900, "loan_to_value": 80},
+                ctx,
+            )
+        )
         assert result is not None
         assert result["result"] == "blocked"
         assert result["code"] == "missing_inputs"
@@ -64,29 +70,35 @@ class TestMortgageGateInputValidation:
 
     def test_credit_score_at_minimum_allowed(self, store, ctx):
         """get_rate_estimate allowed if credit_score = 300."""
-        result = run(policy.mortgage_gate(
-            tool("get_rate_estimate"),
-            {"product_type": "conventional_30", "credit_score": 300, "loan_to_value": 80},
-            ctx
-        ))
+        result = run(
+            policy.mortgage_gate(
+                tool("get_rate_estimate"),
+                {"product_type": "conventional_30", "credit_score": 300, "loan_to_value": 80},
+                ctx,
+            )
+        )
         assert result is None  # allowed
 
     def test_credit_score_at_maximum_allowed(self, store, ctx):
         """get_rate_estimate allowed if credit_score = 850."""
-        result = run(policy.mortgage_gate(
-            tool("get_rate_estimate"),
-            {"product_type": "conventional_30", "credit_score": 850, "loan_to_value": 80},
-            ctx
-        ))
+        result = run(
+            policy.mortgage_gate(
+                tool("get_rate_estimate"),
+                {"product_type": "conventional_30", "credit_score": 850, "loan_to_value": 80},
+                ctx,
+            )
+        )
         assert result is None  # allowed
 
     def test_loan_to_value_too_low_blocked(self, store, ctx):
         """get_rate_estimate blocked if loan_to_value < 1."""
-        result = run(policy.mortgage_gate(
-            tool("get_rate_estimate"),
-            {"product_type": "conventional_30", "credit_score": 720, "loan_to_value": 0},
-            ctx
-        ))
+        result = run(
+            policy.mortgage_gate(
+                tool("get_rate_estimate"),
+                {"product_type": "conventional_30", "credit_score": 720, "loan_to_value": 0},
+                ctx,
+            )
+        )
         assert result is not None
         assert result["result"] == "blocked"
         assert result["code"] == "missing_inputs"
@@ -94,49 +106,57 @@ class TestMortgageGateInputValidation:
 
     def test_loan_to_value_too_high_blocked(self, store, ctx):
         """get_rate_estimate blocked if loan_to_value > 100."""
-        result = run(policy.mortgage_gate(
-            tool("get_rate_estimate"),
-            {"product_type": "conventional_30", "credit_score": 720, "loan_to_value": 150},
-            ctx
-        ))
+        result = run(
+            policy.mortgage_gate(
+                tool("get_rate_estimate"),
+                {"product_type": "conventional_30", "credit_score": 720, "loan_to_value": 150},
+                ctx,
+            )
+        )
         assert result is not None
         assert result["result"] == "blocked"
         assert result["code"] == "missing_inputs"
 
     def test_loan_to_value_at_minimum_allowed(self, store, ctx):
         """get_rate_estimate allowed if loan_to_value = 1."""
-        result = run(policy.mortgage_gate(
-            tool("get_rate_estimate"),
-            {"product_type": "conventional_30", "credit_score": 720, "loan_to_value": 1},
-            ctx
-        ))
+        result = run(
+            policy.mortgage_gate(
+                tool("get_rate_estimate"),
+                {"product_type": "conventional_30", "credit_score": 720, "loan_to_value": 1},
+                ctx,
+            )
+        )
         assert result is None  # allowed
 
     def test_loan_to_value_at_maximum_allowed(self, store, ctx):
         """get_rate_estimate allowed if loan_to_value = 100."""
-        result = run(policy.mortgage_gate(
-            tool("get_rate_estimate"),
-            {"product_type": "conventional_30", "credit_score": 720, "loan_to_value": 100},
-            ctx
-        ))
+        result = run(
+            policy.mortgage_gate(
+                tool("get_rate_estimate"),
+                {"product_type": "conventional_30", "credit_score": 720, "loan_to_value": 100},
+                ctx,
+            )
+        )
         assert result is None  # allowed
 
     def test_valid_inputs_allowed(self, store, ctx):
         """get_rate_estimate allowed with valid inputs."""
-        result = run(policy.mortgage_gate(
-            tool("get_rate_estimate"),
-            {"product_type": "conventional_30", "credit_score": 720, "loan_to_value": 80},
-            ctx
-        ))
+        result = run(
+            policy.mortgage_gate(
+                tool("get_rate_estimate"),
+                {"product_type": "conventional_30", "credit_score": 720, "loan_to_value": 80},
+                ctx,
+            )
+        )
         assert result is None  # allowed
 
     def test_default_values_allowed(self, store, ctx):
         """get_rate_estimate allowed when using default credit_score and loan_to_value."""
-        result = run(policy.mortgage_gate(
-            tool("get_rate_estimate"),
-            {"product_type": "conventional_30"},
-            ctx
-        ))
+        result = run(
+            policy.mortgage_gate(
+                tool("get_rate_estimate"), {"product_type": "conventional_30"}, ctx
+            )
+        )
         assert result is None  # allowed (defaults are 720, 80)
 
 
@@ -149,11 +169,11 @@ class TestMortgageGateLockout:
         call.failed_verifications = 3
         call.verified_customer_id = None
 
-        result = run(policy.mortgage_gate(
-            tool("verify_customer"),
-            {"full_name": "Test User", "phone_last_4": "1234"},
-            ctx
-        ))
+        result = run(
+            policy.mortgage_gate(
+                tool("verify_customer"), {"full_name": "Test User", "phone_last_4": "1234"}, ctx
+            )
+        )
         assert result is not None
         assert result["result"] == "blocked"
         assert result["code"] == "locked"
@@ -164,15 +184,12 @@ class TestMortgageGateLockout:
         call.failed_verifications = 3
         call.verified_customer_id = None
 
-        result = run(policy.mortgage_gate(
-            tool("get_company_info"),
-            {"topic": "hours"},
-            ctx
-        ))
+        result = run(policy.mortgage_gate(tool("get_company_info"), {"topic": "hours"}, ctx))
         assert result is None  # allowed
 
 
 # --- audit tests ---
+
 
 class TestAuditDisclaimer:
     """Tests for disclaimer enforcement in audit."""
@@ -183,15 +200,14 @@ class TestAuditDisclaimer:
             "result": "ok",
             "product": "Conventional 30-Year",
             "estimated_rate": "6.50%",
-            "range": "6.25% to 7.00%"
+            "range": "6.25% to 7.00%",
             # Note: no disclaimer
         }
-        result = run(policy.audit(
-            tool("get_rate_estimate"),
-            {"product_type": "conventional_30"},
-            ctx,
-            tool_response
-        ))
+        result = run(
+            policy.audit(
+                tool("get_rate_estimate"), {"product_type": "conventional_30"}, ctx, tool_response
+            )
+        )
         assert result is not None
         assert "disclaimer" in result
         assert result["disclaimer"] == store.info["disclaimers"]["rates"]
@@ -205,14 +221,13 @@ class TestAuditDisclaimer:
             "product": "Conventional 30-Year",
             "estimated_rate": "6.50%",
             "range": "6.25% to 7.00%",
-            "disclaimer": "Custom disclaimer"
+            "disclaimer": "Custom disclaimer",
         }
-        result = run(policy.audit(
-            tool("get_rate_estimate"),
-            {"product_type": "conventional_30"},
-            ctx,
-            tool_response
-        ))
+        result = run(
+            policy.audit(
+                tool("get_rate_estimate"), {"product_type": "conventional_30"}, ctx, tool_response
+            )
+        )
         # No modification needed since disclaimer exists
         assert result is None
 
@@ -227,15 +242,17 @@ class TestAuditTransferHint:
             "eligible": False,
             "state": "TX",
             "issues": ["TX does not allow HELOCs on investment properties"],
-            "alternatives": ["Consider a cash-out refinance"]
+            "alternatives": ["Consider a cash-out refinance"],
             # Note: no "say"
         }
-        result = run(policy.audit(
-            tool("check_heloc_eligibility"),
-            {"state": "TX", "property_type": "investment"},
-            ctx,
-            tool_response
-        ))
+        result = run(
+            policy.audit(
+                tool("check_heloc_eligibility"),
+                {"state": "TX", "property_type": "investment"},
+                ctx,
+                tool_response,
+            )
+        )
         assert result is not None
         assert "say" in result
         assert "loan officer" in result["say"].lower()
@@ -248,15 +265,17 @@ class TestAuditTransferHint:
             "result": "ok",
             "eligible": None,
             "state": "NY",
-            "status": "needs_review"
+            "status": "needs_review",
             # Note: no "say"
         }
-        result = run(policy.audit(
-            tool("check_heloc_eligibility"),
-            {"state": "NY", "property_type": "primary"},
-            ctx,
-            tool_response
-        ))
+        result = run(
+            policy.audit(
+                tool("check_heloc_eligibility"),
+                {"state": "NY", "property_type": "primary"},
+                ctx,
+                tool_response,
+            )
+        )
         assert result is not None
         assert "say" in result
         assert "loan officer" in result["say"].lower()
@@ -269,14 +288,16 @@ class TestAuditTransferHint:
             "state": "TX",
             "issues": ["TX does not allow HELOCs on investment properties"],
             "alternatives": ["Consider a cash-out refinance"],
-            "say": "Custom guidance here"
+            "say": "Custom guidance here",
         }
-        result = run(policy.audit(
-            tool("check_heloc_eligibility"),
-            {"state": "TX", "property_type": "investment"},
-            ctx,
-            tool_response
-        ))
+        result = run(
+            policy.audit(
+                tool("check_heloc_eligibility"),
+                {"state": "TX", "property_type": "investment"},
+                ctx,
+                tool_response,
+            )
+        )
         # No modification needed since say exists
         assert result is None
 
@@ -286,15 +307,17 @@ class TestAuditTransferHint:
             "result": "ok",
             "eligible": False,
             "property_value": "$500 thousand",
-            "equity": "$100 thousand"
+            "equity": "$100 thousand",
             # Note: no "say"
         }
-        result = run(policy.audit(
-            tool("calculate_equity"),
-            {"property_value": 500000, "mortgage_balance": 400000},
-            ctx,
-            tool_response
-        ))
+        result = run(
+            policy.audit(
+                tool("calculate_equity"),
+                {"property_value": 500000, "mortgage_balance": 400000},
+                ctx,
+                tool_response,
+            )
+        )
         assert result is not None
         assert "say" in result
         assert "loan officer" in result["say"].lower()
@@ -305,14 +328,16 @@ class TestAuditTransferHint:
             "result": "ok",
             "eligible": True,
             "state": "CA",
-            "max_heloc_amount": "$200 thousand"
+            "max_heloc_amount": "$200 thousand",
         }
-        result = run(policy.audit(
-            tool("check_heloc_eligibility"),
-            {"state": "CA", "property_type": "primary"},
-            ctx,
-            tool_response
-        ))
+        result = run(
+            policy.audit(
+                tool("check_heloc_eligibility"),
+                {"state": "CA", "property_type": "primary"},
+                ctx,
+                tool_response,
+            )
+        )
         # No modification needed for eligible result
         assert result is None
 
@@ -321,14 +346,16 @@ class TestAuditTransferHint:
         tool_response = {
             "result": "ok",
             "eligible": False,  # Even if ineligible
-            "some_data": "value"
+            "some_data": "value",
         }
-        result = run(policy.audit(
-            tool("get_company_info"),  # Not in SUGGEST_TRANSFER
-            {"topic": "hours"},
-            ctx,
-            tool_response
-        ))
+        result = run(
+            policy.audit(
+                tool("get_company_info"),  # Not in SUGGEST_TRANSFER
+                {"topic": "hours"},
+                ctx,
+                tool_response,
+            )
+        )
         # No modification for non-SUGGEST_TRANSFER tools
         assert result is None
 
@@ -338,19 +365,10 @@ class TestAuditNoMutation:
 
     def test_original_response_not_mutated_on_disclaimer_add(self, store, ctx):
         """Original tool_response dict is not mutated when adding disclaimer."""
-        original = {
-            "result": "ok",
-            "product": "HELOC",
-            "estimated_rate": "7.00%"
-        }
+        original = {"result": "ok", "product": "HELOC", "estimated_rate": "7.00%"}
         original_copy = dict(original)
 
-        run(policy.audit(
-            tool("get_rate_estimate"),
-            {"product_type": "heloc"},
-            ctx,
-            original
-        ))
+        run(policy.audit(tool("get_rate_estimate"), {"product_type": "heloc"}, ctx, original))
 
         assert original == original_copy  # No mutation
 
@@ -360,16 +378,18 @@ class TestAuditNoMutation:
             "result": "ok",
             "eligible": False,
             "state": "TX",
-            "issues": ["Investment property restriction"]
+            "issues": ["Investment property restriction"],
         }
         original_copy = dict(original)
 
-        run(policy.audit(
-            tool("check_heloc_eligibility"),
-            {"state": "TX", "property_type": "investment"},
-            ctx,
-            original
-        ))
+        run(
+            policy.audit(
+                tool("check_heloc_eligibility"),
+                {"state": "TX", "property_type": "investment"},
+                ctx,
+                original,
+            )
+        )
 
         assert original == original_copy  # No mutation
 
@@ -385,15 +405,12 @@ class TestAuditCombined:
             "result": "ok",
             "eligible": False,  # ineligible
             "product": "HELOC",
-            "estimated_rate": "7.00%"
+            "estimated_rate": "7.00%",
             # No disclaimer, no say
         }
-        result = run(policy.audit(
-            tool("get_rate_estimate"),
-            {"product_type": "heloc"},
-            ctx,
-            tool_response
-        ))
+        result = run(
+            policy.audit(tool("get_rate_estimate"), {"product_type": "heloc"}, ctx, tool_response)
+        )
         assert result is not None
         assert "disclaimer" in result
         assert "say" in result
