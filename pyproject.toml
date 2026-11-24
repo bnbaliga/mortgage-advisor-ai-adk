@@ -16,6 +16,7 @@ dependencies = [
     "beautifulsoup4>=4.15.0",
     "pypdf>=7.0.1",
     "numpy>=2.4.6",
+    "python-docx>=1.2.0",
 ]
 
 [tool.uv]
