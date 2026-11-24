@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Example Conversation
+Transcripts - HomeFirst AI Mortgage Advisor</title>
+    <style>
+        :root {
+            --primary-color: #1a5f7a;
+            --secondary-color: #2c8c99;
+            --accent-color: #57c5b6;
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --code-bg: #f1f5f9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.7;
+            color: var(--text-color);
+            background: var(--bg-color);
+            padding: 0;
+            margin: 0;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 40px 60px;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .header .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 40px 60px;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--primary-color);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        h1 { font-size: 2rem; border-bottom: 3px solid var(--accent-color); padding-bottom: 0.5rem; }
+        h2 { font-size: 1.6rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.4rem; }
+        h3 { font-size: 1.3rem; }
+        h4 { font-size: 1.1rem; }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        tr:nth-child(even) {
+            background: var(--bg-color);
+        }
+
+        tr:hover {
+            background: #e8f4f8;
+        }
+
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #c7254e;
+        }
+
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        blockquote {
+            border-left: 4px solid var(--accent-color);
+            padding-left: 20px;
+            margin: 1.5rem 0;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        ul, ol {
+            margin: 1rem 0 1rem 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        hr {
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-color), transparent);
+            margin: 2rem 0;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-left: 4px solid var(--secondary-color);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .success-box {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #64748b;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 40px;
+        }
+
+        .toc {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .toc h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-must { background: #fee2e2; color: #991b1b; }
+        .badge-should { background: #fef3c7; color: #92400e; }
+        .badge-could { background: #d1fae5; color: #065f46; }
+        .badge-accepted { background: #d1fae5; color: #065f46; }
+        .badge-proposed { background: #dbeafe; color: #1e40af; }
+
+        @media print {
+            .header { padding: 20px; }
+            .container { padding: 20px; }
+            pre { white-space: pre-wrap; }
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 20px; }
+            .header h1 { font-size: 1.8rem; }
+            .container { padding: 0 20px 40px; }
+            table { font-size: 0.9rem; }
+            th, td { padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">🏠</div>
+            <div>
+                <div style="font-weight: 600; font-size: 1.2rem;">HomeFirst AI</div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">Mortgage Advisor</div>
+            </div>
+        </div>
+        <h1>Example Conversation Transcripts</h1>
+        <div class="subtitle">Technical Documentation</div>
+    </div>
+
+    <div class="container">
+        <h1 id="example-conversation-transcripts">Example Conversation
+        Transcripts</h1>
+        <p><strong>HomeFirst AI Mortgage Advisor - Reference
+        Conversations</strong></p>
+        <hr />
+        <h2 id="conversation-1-heloc-inquiry-happy-path">Conversation 1:
+        HELOC Inquiry (Happy Path)</h2>
+        <pre><code>SYSTEM: Call connected, active_agent=triage
+
+SAM: Hi, this is Sam with HomeFirst. Are you calling about a new
+     loan or an existing mortgage?
+
+CALLER: Hi, I&#39;m looking into a home equity line of credit.
+
+SAM: Great! A HELOC can be a flexible way to access your home&#39;s equity.
+     Let me connect you with Mac, our mortgage specialist who can
+     help with that.
+
+SYSTEM: transfer_to_specialist(&quot;origination&quot;, &quot;HELOC inquiry&quot;)
+SYSTEM: active_agent=origination
+
+MAC: Hi there! This is Mac. I understand you&#39;re interested in a HELOC.
+     First, what state is your property located in?
+
+CALLER: California.
+
+MAC: Perfect. And is this your primary residence, a second home, or
+     an investment property?
+
+CALLER: It&#39;s my primary home.
+
+SYSTEM: check_heloc_eligibility(state=&quot;CA&quot;, property_type=&quot;primary&quot;)
+RESULT: {eligible: true, max_cltv: 80}
+
+MAC: Good news - you&#39;re eligible for a HELOC in California. To give
+     you an idea of your borrowing power, what would you estimate
+     your home is worth?
+
+CALLER: Around 800 thousand.
+
+MAC: And approximately how much do you still owe on your current
+     mortgage?
+
+CALLER: About 300 thousand.
+
+SYSTEM: calculate_equity(home_value=800000, mortgage_balance=300000)
+RESULT: {equity: 500000, max_heloc: 340000, ltv: 37.5}
+
+MAC: Great! With $500,000 in equity and a current LTV of 37.5%, you
+     could potentially borrow up to $340,000 with a HELOC at 80%
+     combined LTV. Would you like a rate estimate?
+
+CALLER: Yes, what would my rate be?
+
+MAC: What&#39;s your approximate credit score range? For example, excellent
+     would be 750 or above, good would be 700 to 749.
+
+CALLER: I&#39;m around 780.
+
+SYSTEM: get_rate_estimate(product=&quot;heloc&quot;, credit_score=780, ltv=37.5)
+RESULT: {rate: &quot;6.125%&quot;, apr: &quot;6.25%&quot;, disclaimer: &quot;estimates only&quot;}
+
+MAC: With your excellent credit and low LTV, your estimated rate would
+     be around 6.125% APR. Keep in mind these are estimates only and
+     subject to credit approval and market conditions. Would you like
+     to speak with one of our licensed loan officers to start an
+     application?
+
+CALLER: That sounds great, yes please.
+
+SYSTEM: register_lead(name=&quot;caller&quot;, product=&quot;heloc&quot;, intent=&quot;apply&quot;)
+SYSTEM: transfer_to_loan_officer(reason=&quot;qualified lead wants to apply&quot;)
+
+MAC: Excellent! I&#39;m transferring you now to a loan officer who can
+     walk you through the application process. Have a great day!
+
+SYSTEM: Call transferred to loan officer queue</code></pre>
+        <hr />
+        <h2
+        id="conversation-2-texas-rental-property-compliance-block">Conversation
+        2: Texas Rental Property (Compliance Block)</h2>
+        <pre><code>SYSTEM: Call connected, active_agent=triage
+
+SAM: Hi, this is Sam with HomeFirst. How can I help you today?
+
+CALLER: I need a HELOC on my rental property in Texas.
+
+SAM: I can help connect you with someone about that. Let me transfer
+     you to Mac, our mortgage specialist.
+
+SYSTEM: transfer_to_specialist(&quot;origination&quot;, &quot;HELOC on TX rental&quot;)
+SYSTEM: active_agent=origination
+
+MAC: Hi, this is Mac. I understand you&#39;re interested in a HELOC in
+     Texas. Just to confirm, is this property your primary residence
+     or is it a rental or investment property?
+
+CALLER: It&#39;s a rental property that I own.
+
+SYSTEM: check_heloc_eligibility(state=&quot;TX&quot;, property_type=&quot;rental&quot;)
+RESULT: {eligible: false, reason: &quot;TX law restricts HELOCs to
+         primary residences&quot;, citation: &quot;TX Constitution Art 16&quot;}
+
+MAC: I appreciate you reaching out. Unfortunately, Texas law restricts
+     home equity lines of credit to primary residences only. This is
+     based on the Texas Constitution Article 16. For investment
+     properties, HELOCs aren&#39;t available in Texas.
+
+CALLER: That&#39;s frustrating. Is there any other option?
+
+MAC: There are a couple alternatives. A cash-out refinance is available
+     for investment properties in Texas, or you could consider a DSCR
+     loan if the property generates rental income. Would you like me
+     to give you some details on those options?
+
+CALLER: What about the cash-out refinance?
+
+SYSTEM: get_mortgage_products(product_type=&quot;cashout_refi&quot;)
+
+MAC: A cash-out refinance replaces your current mortgage with a new,
+     larger loan, giving you the difference in cash. For investment
+     properties, you can typically cash out up to 75% of the property
+     value. Would you like a rate estimate for that?
+
+CALLER: Sure.
+
+MAC: What&#39;s the approximate value of the property?
+
+CALLER: About 400 thousand.
+
+MAC: And what do you currently owe on it?
+
+CALLER: 200 thousand.
+
+SYSTEM: calculate_equity(home_value=400000, mortgage_balance=200000)
+RESULT: {equity: 200000, max_cashout: 100000}
+
+MAC: With $200,000 in equity, you could potentially cash out up to
+     $100,000 with a refinance at 75% LTV. What&#39;s your credit score
+     range?
+
+CALLER: Around 720.
+
+SYSTEM: get_rate_estimate(product=&quot;cashout_refi&quot;, property_type=&quot;investment&quot;,
+                          credit_score=720, ltv=75)
+RESULT: {rate: &quot;7.25%&quot;, disclaimer: &quot;estimates only&quot;}
+
+MAC: For an investment property cash-out refinance, your estimated rate
+     would be around 7.25%. Investment property rates are typically a
+     bit higher than primary residence rates. Keep in mind this is an
+     estimate only. Would you like to discuss this with a loan officer?
+
+CALLER: Yes, let me talk to someone.
+
+SYSTEM: transfer_to_loan_officer(reason=&quot;TX investment property cashout refi&quot;)
+
+MAC: Perfect, let me connect you now. Have a great day!</code></pre>
+        <hr />
+        <h2 id="conversation-3-loan-servicing-and-payment">Conversation
+        3: Loan Servicing and Payment</h2>
+        <pre><code>SYSTEM: Call connected, active_agent=triage
+
+SAM: Hi, this is Sam with HomeFirst. Are you calling about a new loan
+     or questions about your existing mortgage?
+
+CALLER: I need to make a payment on my mortgage.
+
+SAM: I can help with that. Let me connect you with Ivy from our
+     servicing team.
+
+SYSTEM: transfer_to_specialist(&quot;servicing&quot;, &quot;payment request&quot;)
+SYSTEM: active_agent=servicing
+
+IVY: Hi, this is Ivy. I can help you with your payment. First, let me
+     verify your account. May I have your full name?
+
+CALLER: Maria Garcia.
+
+IVY: Thank you, Maria. For security, what are the last 4 digits of the
+     phone number on your account?
+
+CALLER: 5678.
+
+SYSTEM: verify_customer(full_name=&quot;Maria Garcia&quot;, phone_last_4=&quot;5678&quot;)
+RESULT: {verified: true, customer_id: &quot;cust_002&quot;, level: &quot;basic&quot;}
+SYSTEM: identity_strength = BASIC
+
+IVY: Perfect, I&#39;ve found your account. I see your current balance is
+     $285,500 and your next payment of $1,750 is due on the 15th.
+     You mentioned you&#39;d like to make a payment?
+
+CALLER: Yes, I want to pay this month&#39;s payment.
+
+IVY: I can process that for you. For payment transactions, I need to
+     verify a bit more information. What is your date of birth?
+
+CALLER: March 10, 1985.
+
+IVY: And approximately what is your current loan balance?
+
+CALLER: Around 285 thousand.
+
+SYSTEM: verify_customer_strong(dob=&quot;1985-03-10&quot;, balance_estimate=285000)
+RESULT: {verified: true, loan_id: &quot;loan_002&quot;, level: &quot;strong&quot;}
+SYSTEM: identity_strength = STRONG
+
+IVY: Thank you, verification complete. I see you have a Chase checking
+     account ending in 5678 and a Visa card ending in 1234 on file.
+     Which would you like to use?
+
+CALLER: The Chase account.
+
+IVY: And how much would you like to pay?
+
+CALLER: The full amount, 1750.
+
+SYSTEM: prepare_payment(amount=1750, method_id=&quot;bank_5678&quot;, date=&quot;today&quot;)
+RESULT: {pending: true, summary: &quot;$1,750 from Chase ****5678 today&quot;}
+SYSTEM: pending_authorization = {amount: 1750, method: &quot;bank_5678&quot;}
+
+IVY: Alright. So I have a payment of $1,750 from your Chase checking
+     account ending in 5678, scheduled for today. Do I have your
+     authorization to proceed with this payment?
+
+CALLER: Yes, go ahead.
+
+SYSTEM: confirm_payment(authorized=true)
+RESULT: {success: true, confirmation: &quot;PMT-MG-2026-1124-001&quot;}
+
+IVY: Your payment has been processed. Your confirmation number is
+     PMT-MG-2026-1124-001. You should see this reflected in your
+     account within 1-2 business days. Is there anything else I
+     can help with today?
+
+CALLER: No, that&#39;s all. Thank you!
+
+IVY: You&#39;re welcome, Maria. Have a great day!
+
+SYSTEM: Call completed successfully</code></pre>
+        <hr />
+        <h2 id="conversation-4-autopay-setup">Conversation 4: Autopay
+        Setup</h2>
+        <pre><code>SYSTEM: Call connected, identity_strength=STRONG (already verified)
+SYSTEM: active_agent=servicing
+
+IVY: How else can I help you today?
+
+CALLER: I&#39;d like to set up automatic payments.
+
+IVY: I can set that up for you. Would you like to use your Chase
+     account ending in 5678 for autopay?
+
+CALLER: Yes, that works.
+
+IVY: Great. And what day of the month would you like your payment
+     to be automatically withdrawn? You can choose any day from
+     the 1st through the 28th.
+
+CALLER: The first of the month.
+
+SYSTEM: setup_autopay(method_id=&quot;bank_5678&quot;, payment_day=1)
+RESULT: {success: true, effective_date: &quot;2026-12-01&quot;, amount: 1750}
+
+IVY: Perfect! I&#39;ve enrolled you in autopay. Your payment of $1,750
+     will be automatically withdrawn from your Chase account on the
+     1st of each month. Your first automatic payment will be on
+     December 1st. You&#39;ll receive a confirmation email shortly.
+     Is there anything else?
+
+CALLER: Can I change my due date too?
+
+IVY: Absolutely. Your current due date is the 15th. What date would
+     you like to change it to?
+
+CALLER: Can I move it to the 5th?
+
+SYSTEM: change_payment_date(new_date=5)
+RESULT: {success: true, old_date: 15, new_date: 5, effective: &quot;next cycle&quot;}
+
+IVY: Done! Your payment due date has been changed from the 15th to
+     the 5th, effective next billing cycle. Since you&#39;ve set up
+     autopay for the 1st, your autopay will process a few days
+     before your due date. Would you like me to adjust the autopay
+     date to match?
+
+CALLER: Oh, good point. Yes, change autopay to the 3rd.
+
+SYSTEM: setup_autopay(method_id=&quot;bank_5678&quot;, payment_day=3)
+RESULT: {success: true, updated: true, payment_day: 3}
+
+IVY: I&#39;ve updated your autopay to the 3rd of each month. So to
+     summarize: your due date is now the 5th, and autopay will
+     withdraw on the 3rd from your Chase account. Anything else?
+
+CALLER: No, that&#39;s perfect. Thanks!
+
+IVY: You&#39;re welcome! Have a great day!</code></pre>
+        <hr />
+        <h2 id="conversation-5-failed-verification-lockout">Conversation
+        5: Failed Verification (Lockout)</h2>
+        <pre><code>SYSTEM: Call connected, active_agent=servicing
+
+IVY: Hi, this is Ivy with HomeFirst servicing. How can I help you?
+
+CALLER: What&#39;s my payoff amount?
+
+IVY: I can look that up for you. First, let me verify your account.
+     May I have your full name?
+
+CALLER: John Smith.
+
+IVY: Thank you, John. What are the last 4 digits of the phone number
+     on your account?
+
+CALLER: 9999.
+
+SYSTEM: verify_customer(full_name=&quot;John Smith&quot;, phone_last_4=&quot;9999&quot;)
+RESULT: {verified: false}
+SYSTEM: failed_verifications = 1
+
+IVY: I&#39;m sorry, that doesn&#39;t match our records. Could you double-check
+     and try again?
+
+CALLER: Oh, maybe it&#39;s 8888.
+
+SYSTEM: verify_customer(full_name=&quot;John Smith&quot;, phone_last_4=&quot;8888&quot;)
+RESULT: {verified: false}
+SYSTEM: failed_verifications = 2
+
+IVY: That still doesn&#39;t match. We have one more try. What are the
+     last 4 digits?
+
+CALLER: Try 7777.
+
+SYSTEM: verify_customer(full_name=&quot;John Smith&quot;, phone_last_4=&quot;7777&quot;)
+RESULT: {verified: false}
+SYSTEM: failed_verifications = 3
+SYSTEM: locked = true
+
+IVY: I&#39;m sorry, I&#39;m still unable to verify your identity. For your
+     security, I&#39;ll need to transfer you to one of our loan officers
+     who can assist you further. Please hold.
+
+SYSTEM: transfer_to_loan_officer(reason=&quot;verification lockout&quot;)
+
+SYSTEM: Call transferred, lockout logged for security review</code></pre>
+        <hr />
+        <h2 id="conversation-6-observer-suggestions">Conversation 6:
+        Observer Suggestions</h2>
+        <pre><code>SYSTEM: Call connected, identity verified
+SYSTEM: Observer analyzing tool results
+
+IVY: I see your current balance is $285,500. I notice you&#39;re about
+     45 days past due on your last payment. Is everything okay?
+
+SYSTEM: observer_suggestion: &quot;Be empathetic, mention hardship options&quot;
+
+CALLER: We&#39;ve had some unexpected expenses.
+
+IVY: I understand, life can throw curveballs sometimes. We do have
+     some options that might help. We offer forbearance plans and
+     payment arrangements for customers experiencing temporary
+     hardship. Would you like me to connect you with our hardship
+     team to discuss options?
+
+CALLER: That would be helpful.
+
+SYSTEM: transfer_to_loan_officer(reason=&quot;hardship discussion&quot;,
+                                  context=&quot;45 days past due&quot;)
+
+IVY: Let me connect you with someone who specializes in finding
+     solutions for situations like yours. They&#39;ll be able to walk
+     through your options. Hold on just a moment.</code></pre>
+        <hr />
+        <p><em>These transcripts represent expected system behavior.
+        Actual conversations may vary based on caller input and system
+        state.</em></p>
+    </div>
+
+    <div class="footer">
+        <p>HomeFirst AI Mortgage Advisor &copy; 2026 | Confidential</p>
+        <p>Generated from project documentation</p>
+    </div>
+</body>
+</html>

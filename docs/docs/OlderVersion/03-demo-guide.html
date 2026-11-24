@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Guide - HomeFirst AI Mortgage Advisor</title>
+    <style>
+        :root {
+            --primary-color: #1a5f7a;
+            --secondary-color: #2c8c99;
+            --accent-color: #57c5b6;
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --code-bg: #f1f5f9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.7;
+            color: var(--text-color);
+            background: var(--bg-color);
+            padding: 0;
+            margin: 0;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 40px 60px;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .header .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 40px 60px;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--primary-color);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        h1 { font-size: 2rem; border-bottom: 3px solid var(--accent-color); padding-bottom: 0.5rem; }
+        h2 { font-size: 1.6rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.4rem; }
+        h3 { font-size: 1.3rem; }
+        h4 { font-size: 1.1rem; }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        tr:nth-child(even) {
+            background: var(--bg-color);
+        }
+
+        tr:hover {
+            background: #e8f4f8;
+        }
+
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #c7254e;
+        }
+
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        blockquote {
+            border-left: 4px solid var(--accent-color);
+            padding-left: 20px;
+            margin: 1.5rem 0;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        ul, ol {
+            margin: 1rem 0 1rem 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        hr {
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-color), transparent);
+            margin: 2rem 0;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-left: 4px solid var(--secondary-color);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .success-box {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #64748b;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 40px;
+        }
+
+        .toc {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .toc h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-must { background: #fee2e2; color: #991b1b; }
+        .badge-should { background: #fef3c7; color: #92400e; }
+        .badge-could { background: #d1fae5; color: #065f46; }
+        .badge-accepted { background: #d1fae5; color: #065f46; }
+        .badge-proposed { background: #dbeafe; color: #1e40af; }
+
+        @media print {
+            .header { padding: 20px; }
+            .container { padding: 20px; }
+            pre { white-space: pre-wrap; }
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 20px; }
+            .header h1 { font-size: 1.8rem; }
+            .container { padding: 0 20px 40px; }
+            table { font-size: 0.9rem; }
+            th, td { padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">🏠</div>
+            <div>
+                <div style="font-weight: 600; font-size: 1.2rem;">HomeFirst AI</div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">Mortgage Advisor</div>
+            </div>
+        </div>
+        <h1>Demo Guide</h1>
+        <div class="subtitle">Technical Documentation</div>
+    </div>
+
+    <div class="container">
+        <h1 id="demo-guide">Demo Guide</h1>
+        <p><strong>HomeFirst AI Mortgage Advisor - Demonstration
+        Walkthrough</strong></p>
+        <hr />
+        <h2 id="quick-start">Quick Start</h2>
+        <div class="sourceCode" id="cb1"><pre
+        class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Install dependencies</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> sync</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Set up environment</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> .env.example .env</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Edit .env and add your GOOGLE_API_KEY</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Start the server</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run uvicorn mortgage.server:app <span class="at">--port</span> 8000</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Open browser</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="ex">open</span> http://localhost:8000</span></code></pre></div>
+        <hr />
+        <h2 id="demo-scenarios">Demo Scenarios</h2>
+        <h3 id="scenario-1-new-loan-inquiry-origination-flow">Scenario
+        1: New Loan Inquiry (Origination Flow)</h3>
+        <p><strong>Goal:</strong> Demonstrate HELOC eligibility checking
+        and rate estimates</p>
+        <p><strong>Script:</strong></p>
+        <table>
+        <colgroup>
+        <col style="width: 15%" />
+        <col style="width: 32%" />
+        <col style="width: 52%" />
+        </colgroup>
+        <thead>
+        <tr>
+        <th>Step</th>
+        <th>Caller Says</th>
+        <th>Expected AI Response</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>1</td>
+        <td><em>Call connects</em></td>
+        <td>“Hi, this is Sam with HomeFirst. How can I help you
+        today?”</td>
+        </tr>
+        <tr>
+        <td>2</td>
+        <td>“I’m interested in a home equity line of credit”</td>
+        <td>“I’d be happy to help with that. Let me connect you with
+        Mac, our mortgage specialist.”</td>
+        </tr>
+        <tr>
+        <td>3</td>
+        <td><em>Transfer happens</em></td>
+        <td>“Hi, this is Mac. I understand you’re interested in a HELOC.
+        What state is your property in?”</td>
+        </tr>
+        <tr>
+        <td>4</td>
+        <td>“Texas”</td>
+        <td>“Great! Do you live in this property as your primary
+        residence?”</td>
+        </tr>
+        <tr>
+        <td>5</td>
+        <td>“Yes, it’s my home”</td>
+        <td>“Good news - Texas allows HELOCs on primary residences.
+        What’s your approximate home value?”</td>
+        </tr>
+        <tr>
+        <td>6</td>
+        <td>“About 500 thousand”</td>
+        <td>“And roughly how much do you still owe on your
+        mortgage?”</td>
+        </tr>
+        <tr>
+        <td>7</td>
+        <td>“Around 200 thousand”</td>
+        <td>“With $300,000 in equity, you could potentially borrow up to
+        $200,000. Would you like a rate estimate?”</td>
+        </tr>
+        <tr>
+        <td>8</td>
+        <td>“Yes please”</td>
+        <td>“What’s your approximate credit score range?”</td>
+        </tr>
+        <tr>
+        <td>9</td>
+        <td>“Around 750”</td>
+        <td>“With excellent credit, your estimated rate would be around
+        6.25%. <em>This is an estimate only and subject to change.</em>
+        Would you like to speak with a loan officer?”</td>
+        </tr>
+        <tr>
+        <td>10</td>
+        <td>“Yes”</td>
+        <td>“Let me transfer you to one of our licensed loan
+        officers…”</td>
+        </tr>
+        </tbody>
+        </table>
+        <p><strong>Key Points to Highlight:</strong> - Seamless agent
+        transfer (Sam → Mac) - State-specific rule enforcement (Texas
+        HELOC restrictions) - Rate disclaimer automatically added - Lead
+        capture and LO transfer</p>
+        <hr />
+        <h3
+        id="scenario-2-texas-investment-property-compliance-enforcement">Scenario
+        2: Texas Investment Property (Compliance Enforcement)</h3>
+        <p><strong>Goal:</strong> Demonstrate fail-closed design and
+        state rule enforcement</p>
+        <p><strong>Script:</strong></p>
+        <table>
+        <colgroup>
+        <col style="width: 15%" />
+        <col style="width: 32%" />
+        <col style="width: 52%" />
+        </colgroup>
+        <thead>
+        <tr>
+        <th>Step</th>
+        <th>Caller Says</th>
+        <th>Expected AI Response</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>1</td>
+        <td><em>Call connects</em></td>
+        <td>“Hi, this is Sam with HomeFirst…”</td>
+        </tr>
+        <tr>
+        <td>2</td>
+        <td>“I want a HELOC on my rental property in Texas”</td>
+        <td>“Let me connect you with Mac…”</td>
+        </tr>
+        <tr>
+        <td>3</td>
+        <td><em>Transfer</em></td>
+        <td>“Hi, Mac here. A HELOC in Texas - is this for your primary
+        residence or an investment property?”</td>
+        </tr>
+        <tr>
+        <td>4</td>
+        <td>“It’s a rental I own”</td>
+        <td>“I’m sorry, Texas law restricts HELOCs to primary residences
+        only. This is based on the Texas Constitution Article 16. Would
+        you like to explore a cash-out refinance instead?”</td>
+        </tr>
+        <tr>
+        <td>5</td>
+        <td>“What about a cash-out refi?”</td>
+        <td>“A cash-out refinance is available for investment
+        properties. Would you like a rate estimate for that?”</td>
+        </tr>
+        </tbody>
+        </table>
+        <p><strong>Key Points to Highlight:</strong> - Automatic rule
+        enforcement (no prompt-based compliance) - Regulatory citation
+        provided - Alternative offered proactively</p>
+        <hr />
+        <h3 id="scenario-3-account-servicing-and-payment">Scenario 3:
+        Account Servicing and Payment</h3>
+        <p><strong>Goal:</strong> Demonstrate identity verification and
+        payment authorization</p>
+        <p><strong>Script:</strong></p>
+        <table>
+        <colgroup>
+        <col style="width: 15%" />
+        <col style="width: 32%" />
+        <col style="width: 52%" />
+        </colgroup>
+        <thead>
+        <tr>
+        <th>Step</th>
+        <th>Caller Says</th>
+        <th>Expected AI Response</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>1</td>
+        <td><em>Call connects</em></td>
+        <td>“Hi, this is Sam with HomeFirst…”</td>
+        </tr>
+        <tr>
+        <td>2</td>
+        <td>“I need to check my loan balance”</td>
+        <td>“I’ll connect you with Ivy from our servicing team.”</td>
+        </tr>
+        <tr>
+        <td>3</td>
+        <td><em>Transfer</em></td>
+        <td>“Hi, this is Ivy. I can help with your account. May I have
+        your full name?”</td>
+        </tr>
+        <tr>
+        <td>4</td>
+        <td>“John Smith”</td>
+        <td>“Thank you, John. For security, what are the last 4 digits
+        of the phone number on your account?”</td>
+        </tr>
+        <tr>
+        <td>5</td>
+        <td>“1234”</td>
+        <td>“Perfect, I’ve verified your account. Your current balance
+        is $285,500 and your next payment of $1,750 is due on the
+        15th.”</td>
+        </tr>
+        <tr>
+        <td>6</td>
+        <td>“I’d like to make a payment”</td>
+        <td>“I can help with that. First, I need to verify a bit more
+        information. What is your date of birth?”</td>
+        </tr>
+        <tr>
+        <td>7</td>
+        <td>“January 15, 1980”</td>
+        <td>“And approximately what is your loan balance?”</td>
+        </tr>
+        <tr>
+        <td>8</td>
+        <td>“About 285 thousand”</td>
+        <td>“Thank you, verification complete. Would you like to pay
+        from your Chase account ending in 5678 or your Visa ending in
+        1234?”</td>
+        </tr>
+        <tr>
+        <td>9</td>
+        <td>“The Chase account”</td>
+        <td>“And how much would you like to pay?”</td>
+        </tr>
+        <tr>
+        <td>10</td>
+        <td>“1750 dollars”</td>
+        <td>“So I have a payment of $1,750 from your Chase account
+        ending in 5678, scheduled for today. Do I have your
+        authorization to proceed?”</td>
+        </tr>
+        <tr>
+        <td>11</td>
+        <td>“Yes”</td>
+        <td>“Payment confirmed. Your confirmation number is PMT-ABC123.
+        Is there anything else I can help with?”</td>
+        </tr>
+        </tbody>
+        </table>
+        <p><strong>Key Points to Highlight:</strong> - Two-level
+        verification (basic → strong) - Explicit payment read-back -
+        Clear authorization request - Confirmation number provided</p>
+        <hr />
+        <h3
+        id="scenario-4-failed-verification-security-lockout">Scenario 4:
+        Failed Verification (Security Lockout)</h3>
+        <p><strong>Goal:</strong> Demonstrate security controls</p>
+        <p><strong>Script:</strong></p>
+        <table>
+        <colgroup>
+        <col style="width: 15%" />
+        <col style="width: 32%" />
+        <col style="width: 52%" />
+        </colgroup>
+        <thead>
+        <tr>
+        <th>Step</th>
+        <th>Caller Says</th>
+        <th>Expected AI Response</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>1</td>
+        <td>“What’s my loan balance?”</td>
+        <td>“May I have your full name?”</td>
+        </tr>
+        <tr>
+        <td>2</td>
+        <td>“John Smith”</td>
+        <td>“What are the last 4 digits of your phone?”</td>
+        </tr>
+        <tr>
+        <td>3</td>
+        <td>“9999” (wrong)</td>
+        <td>“That doesn’t match our records. Can you try again?”</td>
+        </tr>
+        <tr>
+        <td>4</td>
+        <td>“8888” (wrong)</td>
+        <td>“Still not matching. One more try?”</td>
+        </tr>
+        <tr>
+        <td>5</td>
+        <td>“7777” (wrong)</td>
+        <td>“I’m sorry, I’m unable to verify your identity. For your
+        security, let me transfer you to a loan officer who can
+        help.”</td>
+        </tr>
+        </tbody>
+        </table>
+        <p><strong>Key Points to Highlight:</strong> - 3-attempt lockout
+        - Graceful escalation to human - Security-first design</p>
+        <hr />
+        <h3 id="scenario-5-autopay-setup">Scenario 5: Autopay Setup</h3>
+        <p><strong>Goal:</strong> Demonstrate account management
+        capabilities</p>
+        <p><strong>Script:</strong></p>
+        <table>
+        <colgroup>
+        <col style="width: 15%" />
+        <col style="width: 32%" />
+        <col style="width: 52%" />
+        </colgroup>
+        <thead>
+        <tr>
+        <th>Step</th>
+        <th>Caller Says</th>
+        <th>Expected AI Response</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>1</td>
+        <td><em>After strong verification</em></td>
+        <td>“How can I help you today?”</td>
+        </tr>
+        <tr>
+        <td>2</td>
+        <td>“Set up autopay”</td>
+        <td>“I can set that up. Would you like to use your Chase account
+        ending in 5678?”</td>
+        </tr>
+        <tr>
+        <td>3</td>
+        <td>“Yes”</td>
+        <td>“And what day of the month would you like payments to be
+        made? You can choose 1st through 28th.”</td>
+        </tr>
+        <tr>
+        <td>4</td>
+        <td>“The 15th”</td>
+        <td>“Perfect. I’ve enrolled you in autopay - $1,750 will be
+        automatically withdrawn from your Chase account on the 15th of
+        each month. Your first autopay will be next month.”</td>
+        </tr>
+        </tbody>
+        </table>
+        <hr />
+        <h2 id="demo-tips">Demo Tips</h2>
+        <h3 id="audio-quality">Audio Quality</h3>
+        <ul>
+        <li>Use a quiet environment</li>
+        <li>Speak clearly and at normal pace</li>
+        <li>Allow brief pauses between sentences</li>
+        </ul>
+        <h3 id="highlighting-features">Highlighting Features</h3>
+        <ul>
+        <li>Point out seamless agent transfers (no audio gap)</li>
+        <li>Show the UI updates as tools are called</li>
+        <li>Mention the policy door validating each action</li>
+        </ul>
+        <h3 id="common-questions-to-address">Common Questions to
+        Address</h3>
+        <table>
+        <colgroup>
+        <col style="width: 55%" />
+        <col style="width: 44%" />
+        </colgroup>
+        <thead>
+        <tr>
+        <th>Question</th>
+        <th>Answer</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>“Can it approve loans?”</td>
+        <td>“No - it qualifies and captures leads for licensed loan
+        officers”</td>
+        </tr>
+        <tr>
+        <td>“What about PII?”</td>
+        <td>“All sensitive data is redacted in logs”</td>
+        </tr>
+        <tr>
+        <td>“How does it handle errors?”</td>
+        <td>“Fail-closed design - unknown states route to humans”</td>
+        </tr>
+        <tr>
+        <td>“Card numbers by voice?”</td>
+        <td>“Never - only keypad entry for PCI compliance”</td>
+        </tr>
+        </tbody>
+        </table>
+        <hr />
+        <h2 id="technical-demo-optional">Technical Demo (Optional)</h2>
+        <h3 id="view-real-time-events">View Real-Time Events</h3>
+        <p>Open browser developer console (F12) to see: -
+        <code>transcript</code> - Real-time speech recognition -
+        <code>action</code> - Tool calls being made -
+        <code>tool_result</code> - Results from tools -
+        <code>agent_change</code> - Persona switches</p>
+        <h3 id="view-policy-decisions">View Policy Decisions</h3>
+        <p>Check server logs to see:</p>
+        <pre><code>INFO: mortgage_gate ALLOW verify_customer {full_name: ***, phone_last_4: ***}
+INFO: mortgage_gate ALLOW get_loan_balance
+INFO: audit: Added disclaimer to rate_estimate</code></pre>
+        <h3 id="run-tests">Run Tests</h3>
+        <div class="sourceCode" id="cb3"><pre
+        class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run pytest tests/ <span class="at">-v</span> <span class="at">--tb</span><span class="op">=</span>short</span></code></pre></div>
+        <p>Shows 242 passing tests covering all scenarios.</p>
+        <hr />
+        <h2 id="troubleshooting">Troubleshooting</h2>
+        <table>
+        <thead>
+        <tr>
+        <th>Issue</th>
+        <th>Solution</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>No audio</td>
+        <td>Check browser microphone permissions</td>
+        </tr>
+        <tr>
+        <td>Slow response</td>
+        <td>Verify GOOGLE_API_KEY is valid</td>
+        </tr>
+        <tr>
+        <td>“Unknown state”</td>
+        <td>Expected behavior - fail-closed design</td>
+        </tr>
+        <tr>
+        <td>Transfer not working</td>
+        <td>Check persona.py instruction function</td>
+        </tr>
+        </tbody>
+        </table>
+        <hr />
+        <p><em>Document Version: 1.0 | Last Updated: November
+        2026</em></p>
+    </div>
+
+    <div class="footer">
+        <p>HomeFirst AI Mortgage Advisor &copy; 2026 | Confidential</p>
+        <p>Generated from project documentation</p>
+    </div>
+</body>
+</html>

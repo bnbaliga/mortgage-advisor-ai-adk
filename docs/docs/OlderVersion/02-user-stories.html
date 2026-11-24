@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Stories and Acceptance
+Criteria - HomeFirst AI Mortgage Advisor</title>
+    <style>
+        :root {
+            --primary-color: #1a5f7a;
+            --secondary-color: #2c8c99;
+            --accent-color: #57c5b6;
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --code-bg: #f1f5f9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.7;
+            color: var(--text-color);
+            background: var(--bg-color);
+            padding: 0;
+            margin: 0;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 40px 60px;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .header .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 40px 60px;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--primary-color);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        h1 { font-size: 2rem; border-bottom: 3px solid var(--accent-color); padding-bottom: 0.5rem; }
+        h2 { font-size: 1.6rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.4rem; }
+        h3 { font-size: 1.3rem; }
+        h4 { font-size: 1.1rem; }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        tr:nth-child(even) {
+            background: var(--bg-color);
+        }
+
+        tr:hover {
+            background: #e8f4f8;
+        }
+
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #c7254e;
+        }
+
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        blockquote {
+            border-left: 4px solid var(--accent-color);
+            padding-left: 20px;
+            margin: 1.5rem 0;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        ul, ol {
+            margin: 1rem 0 1rem 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        hr {
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-color), transparent);
+            margin: 2rem 0;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-left: 4px solid var(--secondary-color);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .success-box {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #64748b;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 40px;
+        }
+
+        .toc {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .toc h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-must { background: #fee2e2; color: #991b1b; }
+        .badge-should { background: #fef3c7; color: #92400e; }
+        .badge-could { background: #d1fae5; color: #065f46; }
+        .badge-accepted { background: #d1fae5; color: #065f46; }
+        .badge-proposed { background: #dbeafe; color: #1e40af; }
+
+        @media print {
+            .header { padding: 20px; }
+            .container { padding: 20px; }
+            pre { white-space: pre-wrap; }
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 20px; }
+            .header h1 { font-size: 1.8rem; }
+            .container { padding: 0 20px 40px; }
+            table { font-size: 0.9rem; }
+            th, td { padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">🏠</div>
+            <div>
+                <div style="font-weight: 600; font-size: 1.2rem;">HomeFirst AI</div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">Mortgage Advisor</div>
+            </div>
+        </div>
+        <h1>User Stories and Acceptance Criteria</h1>
+        <div class="subtitle">Technical Documentation</div>
+    </div>
+
+    <div class="container">
+        <h1 id="user-stories-and-acceptance-criteria">User Stories and
+        Acceptance Criteria</h1>
+        <p><strong>HomeFirst AI Mortgage Advisor</strong></p>
+        <hr />
+        <h2 id="epic-1-caller-triage-and-routing">Epic 1: Caller Triage
+        and Routing</h2>
+        <h3 id="us-1.1-initial-greeting">US-1.1: Initial Greeting</h3>
+        <p><strong>As a</strong> caller <strong>I want</strong> to be
+        greeted professionally when I call <strong>So that</strong> I
+        know I’ve reached the right company and can explain my needs</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] System answers
+        within 2 seconds of connection - [ ] Greeting includes company
+        name “HomeFirst” - [ ] Agent introduces themselves by name - [ ]
+        Caller is asked about the purpose of their call - [ ] System
+        handles interruptions gracefully</p>
+        <p><strong>Test Scenarios:</strong> | Scenario | Input |
+        Expected Output | |———-|——-|—————–| | Normal greeting | Call
+        connects | “Hi, this is Sam with HomeFirst…” | | Immediate
+        interrupt | “I need help with my loan” | Stops greeting,
+        acknowledges request |</p>
+        <hr />
+        <h3 id="us-1.2-route-to-origination">US-1.2: Route to
+        Origination</h3>
+        <p><strong>As a</strong> prospective borrower <strong>I
+        want</strong> to be connected to a mortgage specialist
+        <strong>So that</strong> I can get information about new
+        loans</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] System identifies
+        new loan intent (“new loan”, “refinance”, “HELOC”) - [ ] Caller
+        is transferred to Mac (origination agent) - [ ] No audio gap
+        during transfer - [ ] Mac introduces themselves
+        appropriately</p>
+        <p><strong>Test Scenarios:</strong> | Scenario | Input |
+        Expected Output | |———-|——-|—————–| | HELOC request | “I want a
+        home equity line” | Transfer to Mac | | Refinance request |
+        “Looking to refinance” | Transfer to Mac | | Ambiguous | “Tell
+        me about your loans” | Clarifying question or transfer |</p>
+        <hr />
+        <h3 id="us-1.3-route-to-servicing">US-1.3: Route to
+        Servicing</h3>
+        <p><strong>As an</strong> existing borrower <strong>I
+        want</strong> to be connected to account services <strong>So
+        that</strong> I can manage my current mortgage</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] System identifies
+        servicing intent (“my loan”, “payment”, “balance”) - [ ] Caller
+        is transferred to Ivy (servicing agent) - [ ] No audio gap
+        during transfer - [ ] Ivy asks for verification</p>
+        <p><strong>Test Scenarios:</strong> | Scenario | Input |
+        Expected Output | |———-|——-|—————–| | Payment request | “I want
+        to make a payment” | Transfer to Ivy | | Balance inquiry |
+        “What’s my balance?” | Transfer to Ivy | | Account question |
+        “Question about my mortgage” | Transfer to Ivy |</p>
+        <hr />
+        <h2 id="epic-2-mortgage-origination">Epic 2: Mortgage
+        Origination</h2>
+        <h3 id="us-2.1-heloc-eligibility-check">US-2.1: HELOC
+        Eligibility Check</h3>
+        <p><strong>As a</strong> prospective HELOC borrower <strong>I
+        want</strong> to know if I’m eligible for a HELOC in my state
+        <strong>So that</strong> I don’t waste time if there are
+        restrictions</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] System asks for
+        property state - [ ] Texas restrictions explained (primary
+        residence only, once per year) - [ ] California restrictions
+        explained if applicable - [ ] Ineligible callers offered
+        alternatives - [ ] State rules cited from regulations</p>
+        <p><strong>Test Scenarios:</strong> | Scenario | Input |
+        Expected Output | |———-|——-|—————–| | TX primary residence |
+        State: TX, Type: Primary | Eligible with restrictions | | TX
+        rental property | State: TX, Type: Rental | Not eligible,
+        explain why | | CA normal | State: CA | Eligible | | Unknown
+        state | State: XY | “I don’t have rules for that state” |</p>
+        <hr />
+        <h3 id="us-2.2-rate-estimate">US-2.2: Rate Estimate</h3>
+        <p><strong>As a</strong> prospective borrower <strong>I
+        want</strong> to get an estimated interest rate <strong>So
+        that</strong> I can compare options and plan my budget</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] System asks for
+        credit score range - [ ] System asks for LTV or property details
+        - [ ] Rate returned with disclaimer “estimates only” - [ ] Rate
+        based on current rate sheet - [ ] Multiple scenarios compared if
+        requested</p>
+        <p><strong>Test Scenarios:</strong> | Scenario | Input |
+        Expected Output | |———-|——-|—————–| | Excellent credit | Credit:
+        780, LTV: 60% | Rate: 6.25% (estimate only) | | Good credit |
+        Credit: 720, LTV: 75% | Rate: 6.75% (estimate only) | | High LTV
+        | Credit: 750, LTV: 90% | Higher rate or PMI mention |</p>
+        <hr />
+        <h3 id="us-2.3-equity-calculation">US-2.3: Equity
+        Calculation</h3>
+        <p><strong>As a</strong> homeowner <strong>I want</strong> to
+        know how much equity I have <strong>So that</strong> I
+        understand my borrowing power</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] System asks for
+        home value - [ ] System asks for current mortgage balance - [ ]
+        Equity calculated: Value - Balance - [ ] Max borrowing at 80%
+        CLTV calculated - [ ] Results explained clearly</p>
+        <p><strong>Test Scenarios:</strong> | Scenario | Input |
+        Expected Output | |———-|——-|—————–| | Significant equity |
+        Value: $500K, Balance: $200K | Equity: $300K, Max: $200K | | Low
+        equity | Value: $400K, Balance: $350K | Equity: $50K, Limited
+        options |</p>
+        <hr />
+        <h3 id="us-2.4-register-as-lead">US-2.4: Register as Lead</h3>
+        <p><strong>As a</strong> interested prospective borrower
+        <strong>I want</strong> to leave my contact information
+        <strong>So that</strong> a loan officer can follow up with
+        me</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] System collects
+        name and phone number - [ ] Email is optional - [ ] Lead
+        registered with intent (HELOC, refi, purchase) - [ ]
+        Confirmation provided to caller - [ ] Lead available for LO
+        follow-up</p>
+        <hr />
+        <h3 id="us-2.5-transfer-to-loan-officer">US-2.5: Transfer to
+        Loan Officer</h3>
+        <p><strong>As a</strong> qualified prospect <strong>I
+        want</strong> to speak with a licensed loan officer <strong>So
+        that</strong> I can proceed with an application</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] System confirms
+        transfer request - [ ] Business hours: Warm transfer to
+        available LO - [ ] After hours: Lead captured for callback - [ ]
+        Context passed to LO (what caller discussed)</p>
+        <hr />
+        <h2 id="epic-3-loan-servicing">Epic 3: Loan Servicing</h2>
+        <h3 id="us-3.1-basic-identity-verification">US-3.1: Basic
+        Identity Verification</h3>
+        <p><strong>As a</strong> returning borrower <strong>I
+        want</strong> to verify my identity quickly <strong>So
+        that</strong> I can access my account information</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] System asks for
+        full name - [ ] System asks for last 4 digits of phone - [ ]
+        Match confirmed against customer record - [ ] Non-match handled
+        gracefully (up to 3 attempts) - [ ] Lockout after 3 failures</p>
+        <p><strong>Test Scenarios:</strong> | Scenario | Input |
+        Expected Output | |———-|——-|—————–| | Correct info | Name: John
+        Smith, Phone: 1234 | Verified, basic access granted | | Wrong
+        phone | Name: John Smith, Phone: 9999 | “That doesn’t match”,
+        retry | | 3 failures | 3 wrong attempts | Locked, transfer to LO
+        |</p>
+        <hr />
+        <h3 id="us-3.2-strong-identity-verification">US-3.2: Strong
+        Identity Verification</h3>
+        <p><strong>As a</strong> borrower making account changes
+        <strong>I want</strong> to complete additional verification
+        <strong>So that</strong> my account is protected from
+        unauthorized changes</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] Required before
+        payments, autopay, date changes - [ ] System asks for date of
+        birth - [ ] System asks for approximate loan balance - [ ]
+        Balance must match within $5,000 - [ ] Lockout after 3
+        failures</p>
+        <hr />
+        <h3 id="us-3.3-check-loan-balance">US-3.3: Check Loan
+        Balance</h3>
+        <p><strong>As a</strong> borrower <strong>I want</strong> to
+        check my current balance <strong>So that</strong> I know how
+        much I owe</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] Requires basic
+        verification - [ ] Shows current principal balance - [ ] Shows
+        next payment amount and due date - [ ] Shows escrow balance if
+        applicable</p>
+        <hr />
+        <h3 id="us-3.4-view-payment-history">US-3.4: View Payment
+        History</h3>
+        <p><strong>As a</strong> borrower <strong>I want</strong> to see
+        my recent payments <strong>So that</strong> I can verify my
+        payment record</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] Requires basic
+        verification - [ ] Shows last 6 payments by default - [ ]
+        Includes date, amount, method for each - [ ] Can request more
+        history (up to 12 months)</p>
+        <hr />
+        <h3 id="us-3.5-make-one-time-payment">US-3.5: Make One-Time
+        Payment</h3>
+        <p><strong>As a</strong> borrower <strong>I want</strong> to
+        make a payment over the phone <strong>So that</strong> I can pay
+        my mortgage conveniently</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] Requires strong
+        verification - [ ] Shows available payment methods - [ ]
+        Confirms amount, method, date - [ ] Reads back details for
+        authorization - [ ] Requires explicit “yes” to proceed - [ ]
+        Provides confirmation number</p>
+        <p><strong>Test Scenarios:</strong> | Scenario | Input |
+        Expected Output | |———-|——-|—————–| | Bank payment | $1500 from
+        Chase ****5678 | “So that’s $1500… Do I have authorization?” | |
+        Confirmed | “Yes” | “Payment processed, confirmation ABC123” | |
+        Declined | “No” / “Wait” | “No problem, payment cancelled” |</p>
+        <hr />
+        <h3 id="us-3.6-manage-autopay">US-3.6: Manage Autopay</h3>
+        <p><strong>As a</strong> borrower <strong>I want</strong> to set
+        up automatic payments <strong>So that</strong> I never miss a
+        payment</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] Requires strong
+        verification - [ ] Can enroll with existing payment method - [ ]
+        Can set payment date (1st-28th) - [ ] Shows confirmation of
+        enrollment - [ ] Can cancel autopay - [ ] Can modify autopay
+        settings</p>
+        <hr />
+        <h3 id="us-3.7-change-payment-date">US-3.7: Change Payment
+        Date</h3>
+        <p><strong>As a</strong> borrower <strong>I want</strong> to
+        change my payment due date <strong>So that</strong> it aligns
+        with my pay schedule</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] Requires strong
+        verification - [ ] New date must be 1st-28th - [ ] Effective
+        date communicated - [ ] One change allowed per 12 months (if
+        applicable)</p>
+        <hr />
+        <h3 id="us-3.8-secure-card-entry">US-3.8: Secure Card Entry</h3>
+        <p><strong>As a</strong> borrower adding a card <strong>I
+        want</strong> to enter my card number securely <strong>So
+        that</strong> my card information is protected</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] Card numbers
+        NEVER spoken to AI - [ ] System prompts for keypad entry - [ ]
+        DTMF tones captured securely - [ ] Card masked in confirmation
+        (****1234) - [ ] PCI-DSS compliant handling</p>
+        <hr />
+        <h2 id="epic-4-compliance-and-security">Epic 4: Compliance and
+        Security</h2>
+        <h3 id="us-4.1-rate-disclaimers">US-4.1: Rate Disclaimers</h3>
+        <p><strong>As a</strong> regulator <strong>I want</strong> rate
+        estimates to include disclaimers <strong>So that</strong>
+        borrowers understand rates are not locked</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] Every rate
+        response includes “estimates only” disclaimer - [ ] Disclaimer
+        states rates subject to change - [ ] Disclaimer states not an
+        offer of credit</p>
+        <hr />
+        <h3 id="us-4.2-state-rule-enforcement">US-4.2: State Rule
+        Enforcement</h3>
+        <p><strong>As a</strong> compliance officer <strong>I
+        want</strong> state-specific rules enforced automatically
+        <strong>So that</strong> we avoid regulatory violations</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] Texas HELOC rules
+        enforced (primary only, once/year) - [ ] California rules
+        enforced - [ ] Florida rules enforced - [ ] Unknown states fail
+        closed (no approval) - [ ] Rules cited with regulatory
+        references</p>
+        <hr />
+        <h3 id="us-4.3-pii-protection">US-4.3: PII Protection</h3>
+        <p><strong>As a</strong> security officer <strong>I
+        want</strong> PII redacted from all logs <strong>So
+        that</strong> we protect customer privacy</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] Names redacted in
+        logs - [ ] Phone numbers redacted in logs - [ ] DOB redacted in
+        logs - [ ] Card numbers never stored - [ ] SSN never collected
+        by voice</p>
+        <hr />
+        <h3 id="us-4.4-verification-lockout">US-4.4: Verification
+        Lockout</h3>
+        <p><strong>As a</strong> security officer <strong>I
+        want</strong> accounts locked after failed verifications
+        <strong>So that</strong> we prevent unauthorized access</p>
+        <p><strong>Acceptance Criteria:</strong> - [ ] 3 failed
+        verifications trigger lockout - [ ] Lockout persists for entire
+        call - [ ] Caller informed of lockout - [ ] Transfer to loan
+        officer offered - [ ] Lockout logged for security review</p>
+        <hr />
+        <h2 id="non-functional-requirements-nfrs">Non-Functional
+        Requirements (NFRs)</h2>
+        <h3 id="nfr-1-performance">NFR-1: Performance</h3>
+        <table>
+        <thead>
+        <tr>
+        <th>ID</th>
+        <th>Requirement</th>
+        <th>Target</th>
+        <th>Priority</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>NFR-P-001</td>
+        <td>Voice response latency</td>
+        <td>&lt; 1 second</td>
+        <td>Must</td>
+        </tr>
+        <tr>
+        <td>NFR-P-002</td>
+        <td>Interruption response</td>
+        <td>&lt; 300ms</td>
+        <td>Must</td>
+        </tr>
+        <tr>
+        <td>NFR-P-003</td>
+        <td>Concurrent calls supported</td>
+        <td>100+</td>
+        <td>Should</td>
+        </tr>
+        <tr>
+        <td>NFR-P-004</td>
+        <td>API response time</td>
+        <td>&lt; 200ms</td>
+        <td>Should</td>
+        </tr>
+        </tbody>
+        </table>
+        <h3 id="nfr-2-reliability">NFR-2: Reliability</h3>
+        <table>
+        <thead>
+        <tr>
+        <th>ID</th>
+        <th>Requirement</th>
+        <th>Target</th>
+        <th>Priority</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>NFR-R-001</td>
+        <td>System availability</td>
+        <td>99.9%</td>
+        <td>Must</td>
+        </tr>
+        <tr>
+        <td>NFR-R-002</td>
+        <td>Graceful degradation</td>
+        <td>Yes</td>
+        <td>Should</td>
+        </tr>
+        <tr>
+        <td>NFR-R-003</td>
+        <td>Auto-recovery from failures</td>
+        <td>&lt; 30 seconds</td>
+        <td>Should</td>
+        </tr>
+        </tbody>
+        </table>
+        <h3 id="nfr-3-security">NFR-3: Security</h3>
+        <table>
+        <thead>
+        <tr>
+        <th>ID</th>
+        <th>Requirement</th>
+        <th>Target</th>
+        <th>Priority</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>NFR-S-001</td>
+        <td>Data encryption in transit</td>
+        <td>TLS 1.3</td>
+        <td>Must</td>
+        </tr>
+        <tr>
+        <td>NFR-S-002</td>
+        <td>Data encryption at rest</td>
+        <td>AES-256</td>
+        <td>Must</td>
+        </tr>
+        <tr>
+        <td>NFR-S-003</td>
+        <td>PII redaction in logs</td>
+        <td>100%</td>
+        <td>Must</td>
+        </tr>
+        <tr>
+        <td>NFR-S-004</td>
+        <td>Card numbers by voice</td>
+        <td>Never</td>
+        <td>Must</td>
+        </tr>
+        <tr>
+        <td>NFR-S-005</td>
+        <td>Authentication for payments</td>
+        <td>2 levels</td>
+        <td>Must</td>
+        </tr>
+        </tbody>
+        </table>
+        <h3 id="nfr-4-scalability">NFR-4: Scalability</h3>
+        <table>
+        <thead>
+        <tr>
+        <th>ID</th>
+        <th>Requirement</th>
+        <th>Target</th>
+        <th>Priority</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>NFR-SC-001</td>
+        <td>Horizontal scaling</td>
+        <td>0-100 instances</td>
+        <td>Should</td>
+        </tr>
+        <tr>
+        <td>NFR-SC-002</td>
+        <td>No session affinity required</td>
+        <td>Yes</td>
+        <td>Should</td>
+        </tr>
+        <tr>
+        <td>NFR-SC-003</td>
+        <td>Stateless design</td>
+        <td>Yes</td>
+        <td>Must</td>
+        </tr>
+        </tbody>
+        </table>
+        <h3 id="nfr-5-maintainability">NFR-5: Maintainability</h3>
+        <table>
+        <thead>
+        <tr>
+        <th>ID</th>
+        <th>Requirement</th>
+        <th>Target</th>
+        <th>Priority</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>NFR-M-001</td>
+        <td>Test coverage</td>
+        <td>&gt; 80%</td>
+        <td>Should</td>
+        </tr>
+        <tr>
+        <td>NFR-M-002</td>
+        <td>Code documentation</td>
+        <td>All public APIs</td>
+        <td>Should</td>
+        </tr>
+        <tr>
+        <td>NFR-M-003</td>
+        <td>Deployment automation</td>
+        <td>CI/CD</td>
+        <td>Should</td>
+        </tr>
+        </tbody>
+        </table>
+        <hr />
+        <h2 id="requirements-traceability-matrix">Requirements
+        Traceability Matrix</h2>
+        <table>
+        <thead>
+        <tr>
+        <th>User Story</th>
+        <th>Business Req</th>
+        <th>Test File</th>
+        <th>Status</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>US-1.1</td>
+        <td>BR-O-001</td>
+        <td>test_mortgage_tools.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-1.2</td>
+        <td>BR-O-001</td>
+        <td>test_mortgage_policy.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-1.3</td>
+        <td>BR-S-001</td>
+        <td>test_servicing_policy.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-2.1</td>
+        <td>BR-O-002</td>
+        <td>test_mortgage_rules.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-2.2</td>
+        <td>BR-O-003</td>
+        <td>test_mortgage_tools.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-2.3</td>
+        <td>BR-O-004</td>
+        <td>test_mortgage_tools.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-2.4</td>
+        <td>BR-O-006</td>
+        <td>test_mortgage_tools.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-2.5</td>
+        <td>BR-O-007</td>
+        <td>test_mortgage_tools.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-3.1</td>
+        <td>BR-S-001</td>
+        <td>test_servicing_policy.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-3.2</td>
+        <td>BR-S-001</td>
+        <td>test_servicing_policy.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-3.3</td>
+        <td>BR-S-002</td>
+        <td>test_servicing_tools.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-3.4</td>
+        <td>BR-S-003</td>
+        <td>test_servicing_tools.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-3.5</td>
+        <td>BR-S-004</td>
+        <td>test_servicing_policy.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-3.6</td>
+        <td>BR-S-005</td>
+        <td>test_servicing_tools.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-3.7</td>
+        <td>BR-S-006</td>
+        <td>test_servicing_tools.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-3.8</td>
+        <td>BR-S-007</td>
+        <td>test_servicing_tools.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-4.1</td>
+        <td>BR-C-003</td>
+        <td>test_mortgage_policy.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-4.2</td>
+        <td>BR-C-001, BR-C-002</td>
+        <td>test_mortgage_rules.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-4.3</td>
+        <td>BR-C-005</td>
+        <td>test_mortgage_policy.py</td>
+        <td>Implemented</td>
+        </tr>
+        <tr>
+        <td>US-4.4</td>
+        <td>BR-S-001</td>
+        <td>test_servicing_policy.py</td>
+        <td>Implemented</td>
+        </tr>
+        </tbody>
+        </table>
+        <hr />
+        <p><em>Total: 20 User Stories | 242 Tests | 100%
+        Traceability</em></p>
+    </div>
+
+    <div class="footer">
+        <p>HomeFirst AI Mortgage Advisor &copy; 2026 | Confidential</p>
+        <p>Generated from project documentation</p>
+    </div>
+</body>
+</html>
