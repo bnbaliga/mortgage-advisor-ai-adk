@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADR-0006: Gemini Live API for Voice
+AI - HomeFirst AI Mortgage Advisor</title>
+    <style>
+        :root {
+            --primary-color: #1a5f7a;
+            --secondary-color: #2c8c99;
+            --accent-color: #57c5b6;
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --code-bg: #f1f5f9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.7;
+            color: var(--text-color);
+            background: var(--bg-color);
+            padding: 0;
+            margin: 0;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 40px 60px;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .header .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 40px 60px;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--primary-color);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        h1 { font-size: 2rem; border-bottom: 3px solid var(--accent-color); padding-bottom: 0.5rem; }
+        h2 { font-size: 1.6rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.4rem; }
+        h3 { font-size: 1.3rem; }
+        h4 { font-size: 1.1rem; }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        tr:nth-child(even) {
+            background: var(--bg-color);
+        }
+
+        tr:hover {
+            background: #e8f4f8;
+        }
+
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #c7254e;
+        }
+
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        blockquote {
+            border-left: 4px solid var(--accent-color);
+            padding-left: 20px;
+            margin: 1.5rem 0;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        ul, ol {
+            margin: 1rem 0 1rem 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        hr {
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-color), transparent);
+            margin: 2rem 0;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-left: 4px solid var(--secondary-color);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .success-box {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #64748b;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 40px;
+        }
+
+        .toc {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .toc h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-must { background: #fee2e2; color: #991b1b; }
+        .badge-should { background: #fef3c7; color: #92400e; }
+        .badge-could { background: #d1fae5; color: #065f46; }
+        .badge-accepted { background: #d1fae5; color: #065f46; }
+        .badge-proposed { background: #dbeafe; color: #1e40af; }
+
+        @media print {
+            .header { padding: 20px; }
+            .container { padding: 20px; }
+            pre { white-space: pre-wrap; }
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 20px; }
+            .header h1 { font-size: 1.8rem; }
+            .container { padding: 0 20px 40px; }
+            table { font-size: 0.9rem; }
+            th, td { padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">🏠</div>
+            <div>
+                <div style="font-weight: 600; font-size: 1.2rem;">HomeFirst AI</div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">Mortgage Advisor</div>
+            </div>
+        </div>
+        <h1>ADR-0006: Gemini Live API for Voice AI</h1>
+        <div class="subtitle">Technical Documentation</div>
+    </div>
+
+    <div class="container">
+        <h1 id="adr-0006-gemini-live-api-for-voice-ai">ADR-0006: Gemini
+        Live API for Voice AI</h1>
+        <h2 id="status">Status</h2>
+        <p><strong>Accepted</strong></p>
+        <h2 id="date">Date</h2>
+        <p>2026-10-25</p>
+        <h2 id="context">Context</h2>
+        <p>We need to select a voice AI platform that supports: -
+        <strong>Bidirectional streaming</strong>: Send and receive audio
+        simultaneously - <strong>Low latency</strong>: Sub-second
+        response times - <strong>Interruption handling</strong>: Stop
+        speaking when caller interrupts - <strong>Function
+        calling</strong>: Invoke tools during conversation -
+        <strong>Natural voices</strong>: High-quality text-to-speech</p>
+        <h2 id="decision">Decision</h2>
+        <p>We chose <strong>Google Gemini Live API</strong> with
+        <strong>Google ADK</strong> (Agent Development Kit).</p>
+        <h3 id="key-selection-criteria">Key Selection Criteria</h3>
+        <table>
+        <thead>
+        <tr>
+        <th>Criteria</th>
+        <th>Gemini Live</th>
+        <th>OpenAI Realtime</th>
+        <th>Amazon Lex</th>
+        <th>Weight</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>Streaming latency</td>
+        <td>&lt; 500ms</td>
+        <td>&lt; 500ms</td>
+        <td>~1s</td>
+        <td>High</td>
+        </tr>
+        <tr>
+        <td>Interruption handling</td>
+        <td>Native</td>
+        <td>Native</td>
+        <td>Manual</td>
+        <td>High</td>
+        </tr>
+        <tr>
+        <td>Function calling</td>
+        <td>Native</td>
+        <td>Native</td>
+        <td>Custom</td>
+        <td>High</td>
+        </tr>
+        <tr>
+        <td>Voice quality</td>
+        <td>Excellent</td>
+        <td>Excellent</td>
+        <td>Good</td>
+        <td>Medium</td>
+        </tr>
+        <tr>
+        <td>ADK integration</td>
+        <td>Native</td>
+        <td>None</td>
+        <td>None</td>
+        <td>High</td>
+        </tr>
+        <tr>
+        <td>Pricing</td>
+        <td>$0.01/min</td>
+        <td>$0.06/min</td>
+        <td>$0.004/15s</td>
+        <td>Medium</td>
+        </tr>
+        </tbody>
+        </table>
+        <h3 id="implementation">Implementation</h3>
+        <div class="sourceCode" id="cb1"><pre
+        class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ADK Agent with Gemini Live model</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>root_agent <span class="op">=</span> Agent(</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span>Gemini(</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        model<span class="op">=</span><span class="st">&quot;gemini-3.1-flash-live-preview&quot;</span>,  <span class="co"># Live-optimized model</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        api_key<span class="op">=</span>os.environ[<span class="st">&quot;GOOGLE_API_KEY&quot;</span>],</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">&quot;mortgage&quot;</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    instruction<span class="op">=</span>instruction,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    tools<span class="op">=</span>ALL_AGENT_TOOLS,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Bidirectional streaming via ADK runner</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="cf">for</span> event <span class="kw">in</span> runner.run_live(</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    user_id<span class="op">=</span>session.user_id,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    session_id<span class="op">=</span>call_id,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    live_request_queue<span class="op">=</span>queue,  <span class="co"># Audio input queue</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    run_config<span class="op">=</span>RUN_CONFIG</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>):</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Events: transcript, audio, tool_call, turn_complete, interrupted</span></span></code></pre></div>
+        <h3 id="audio-configuration">Audio Configuration</h3>
+        <table>
+        <thead>
+        <tr>
+        <th>Parameter</th>
+        <th>Value</th>
+        <th>Rationale</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>Input sample rate</td>
+        <td>16kHz</td>
+        <td>Speech-optimized</td>
+        </tr>
+        <tr>
+        <td>Output sample rate</td>
+        <td>24kHz</td>
+        <td>High-quality TTS</td>
+        </tr>
+        <tr>
+        <td>Format</td>
+        <td>PCM s16le</td>
+        <td>Low latency, no compression overhead</td>
+        </tr>
+        <tr>
+        <td>Voice</td>
+        <td>Aoede</td>
+        <td>Natural, conversational tone</td>
+        </tr>
+        </tbody>
+        </table>
+        <h2 id="consequences">Consequences</h2>
+        <h3 id="positive">Positive</h3>
+        <ul>
+        <li><strong>Sub-second latency</strong>: ~300-500ms typical
+        response time</li>
+        <li><strong>Native interruption</strong>: Gemini stops speaking
+        immediately on barge-in</li>
+        <li><strong>ADK integration</strong>: First-class tool calling,
+        session management</li>
+        <li><strong>Single vendor</strong>: Google Cloud for
+        infrastructure + AI</li>
+        <li><strong>Cost effective</strong>: $0.01/min vs $0.06/min
+        alternatives</li>
+        </ul>
+        <h3 id="negative">Negative</h3>
+        <ul>
+        <li><strong>Google lock-in</strong>: Tightly coupled to Gemini
+        ecosystem</li>
+        <li><strong>Preview API</strong>: Live API still in preview (may
+        change)</li>
+        <li><strong>Limited regions</strong>: Not available in all GCP
+        regions</li>
+        <li><strong>Model limits</strong>: 100k token context window
+        (requires compression)</li>
+        </ul>
+        <h3 id="mitigations">Mitigations</h3>
+        <ul>
+        <li><strong>Abstraction layer</strong>: ADK provides some
+        portability</li>
+        <li><strong>Preview monitoring</strong>: Track API changes, test
+        against beta</li>
+        <li><strong>Context compression</strong>: Slide window at 100k
+        tokens → 60k</li>
+        <li><strong>Regional deployment</strong>: Deploy in supported
+        regions (us-central1)</li>
+        </ul>
+        <h2 id="alternatives-considered">Alternatives Considered</h2>
+        <h3 id="option-2-openai-realtime-api-rejected">Option 2: OpenAI
+        Realtime API (Rejected)</h3>
+        <p>Similar bidirectional streaming with GPT-4.</p>
+        <p><strong>Rejected because:</strong> - Higher cost ($0.06/min
+        vs $0.01/min) - No native ADK equivalent - Separate vendor from
+        infrastructure</p>
+        <h3 id="option-3-custom-stt-llm-tts-rejected">Option 3: Custom
+        STT + LLM + TTS (Rejected)</h3>
+        <p>Compose Whisper + GPT-4 + ElevenLabs.</p>
+        <p><strong>Rejected because:</strong> - Higher latency (3 round
+        trips) - Complex orchestration - No native interruption
+        handling</p>
+        <h3 id="option-4-amazon-lex-bedrock-rejected">Option 4: Amazon
+        Lex + Bedrock (Rejected)</h3>
+        <p>AWS voice AI with Claude.</p>
+        <p><strong>Rejected because:</strong> - Higher latency (~1s
+        response) - Manual interruption handling - Less natural voice
+        options</p>
+        <h2 id="references">References</h2>
+        <ul>
+        <li>Gemini Live API documentation</li>
+        <li>Google ADK Agent Patterns</li>
+        <li>Internal latency benchmarks (2026-10-20)</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        <p>HomeFirst AI Mortgage Advisor &copy; 2026 | Confidential</p>
+        <p>Generated from project documentation</p>
+    </div>
+</body>
+</html>

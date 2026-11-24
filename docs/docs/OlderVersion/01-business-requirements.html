@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Requirements Document
+(BRD) - HomeFirst AI Mortgage Advisor</title>
+    <style>
+        :root {
+            --primary-color: #1a5f7a;
+            --secondary-color: #2c8c99;
+            --accent-color: #57c5b6;
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --code-bg: #f1f5f9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.7;
+            color: var(--text-color);
+            background: var(--bg-color);
+            padding: 0;
+            margin: 0;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 40px 60px;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .header .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 40px 60px;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--primary-color);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        h1 { font-size: 2rem; border-bottom: 3px solid var(--accent-color); padding-bottom: 0.5rem; }
+        h2 { font-size: 1.6rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.4rem; }
+        h3 { font-size: 1.3rem; }
+        h4 { font-size: 1.1rem; }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        tr:nth-child(even) {
+            background: var(--bg-color);
+        }
+
+        tr:hover {
+            background: #e8f4f8;
+        }
+
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #c7254e;
+        }
+
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        blockquote {
+            border-left: 4px solid var(--accent-color);
+            padding-left: 20px;
+            margin: 1.5rem 0;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        ul, ol {
+            margin: 1rem 0 1rem 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        hr {
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-color), transparent);
+            margin: 2rem 0;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-left: 4px solid var(--secondary-color);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .success-box {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #64748b;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 40px;
+        }
+
+        .toc {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .toc h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-must { background: #fee2e2; color: #991b1b; }
+        .badge-should { background: #fef3c7; color: #92400e; }
+        .badge-could { background: #d1fae5; color: #065f46; }
+        .badge-accepted { background: #d1fae5; color: #065f46; }
+        .badge-proposed { background: #dbeafe; color: #1e40af; }
+
+        @media print {
+            .header { padding: 20px; }
+            .container { padding: 20px; }
+            pre { white-space: pre-wrap; }
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 20px; }
+            .header h1 { font-size: 1.8rem; }
+            .container { padding: 0 20px 40px; }
+            table { font-size: 0.9rem; }
+            th, td { padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">🏠</div>
+            <div>
+                <div style="font-weight: 600; font-size: 1.2rem;">HomeFirst AI</div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">Mortgage Advisor</div>
+            </div>
+        </div>
+        <h1>Business Requirements Document (BRD)</h1>
+        <div class="subtitle">Technical Documentation</div>
+    </div>
+
+    <div class="container">
+        <h1 id="business-requirements-document-brd">Business
+        Requirements Document (BRD)</h1>
+        <p><strong>HomeFirst AI Mortgage Advisor</strong></p>
+        <table>
+        <thead>
+        <tr>
+        <th>Document Info</th>
+        <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>Version</td>
+        <td>1.0</td>
+        </tr>
+        <tr>
+        <td>Date</td>
+        <td>November 2026</td>
+        </tr>
+        <tr>
+        <td>Status</td>
+        <td>Approved</td>
+        </tr>
+        <tr>
+        <td>Owner</td>
+        <td>Product Team</td>
+        </tr>
+        </tbody>
+        </table>
+        <hr />
+        <h2 id="executive-summary">1. Executive Summary</h2>
+        <h3 id="business-opportunity">1.1 Business Opportunity</h3>
+        <p>The mortgage industry faces a critical efficiency challenge.
+        Traditional loan origination costs average <strong>$12,000 per
+        loan</strong>, with 40% attributed to customer acquisition and
+        initial screening. Borrowers experience:</p>
+        <ul>
+        <li><strong>Average 3-day wait</strong> for loan officer
+        callbacks</li>
+        <li><strong>Limited availability</strong> (business hours
+        only)</li>
+        <li><strong>Inconsistent information</strong> across
+        representatives</li>
+        <li><strong>High abandonment rates</strong> (35%) during initial
+        inquiry phase</li>
+        </ul>
+        <h3 id="proposed-solution">1.2 Proposed Solution</h3>
+        <p>HomeFirst AI Mortgage Advisor is a 24/7 voice AI system
+        that:</p>
+        <ol type="1">
+        <li><strong>Answers calls instantly</strong> with natural
+        conversation</li>
+        <li><strong>Screens eligibility</strong> against state-specific
+        lending rules</li>
+        <li><strong>Provides rate estimates</strong> with required
+        compliance disclaimers</li>
+        <li><strong>Captures qualified leads</strong> for loan officer
+        follow-up</li>
+        <li><strong>Services existing borrowers</strong> with account
+        information and payments</li>
+        </ol>
+        <h3 id="expected-business-outcomes">1.3 Expected Business
+        Outcomes</h3>
+        <table>
+        <thead>
+        <tr>
+        <th>Metric</th>
+        <th>Current State</th>
+        <th>Target State</th>
+        <th>Improvement</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>Cost per inquiry</td>
+        <td>$45</td>
+        <td>$5</td>
+        <td>89% reduction</td>
+        </tr>
+        <tr>
+        <td>After-hours capture</td>
+        <td>0%</td>
+        <td>100%</td>
+        <td>Full coverage</td>
+        </tr>
+        <tr>
+        <td>Average response time</td>
+        <td>48 hours</td>
+        <td>Instant</td>
+        <td>99%+ reduction</td>
+        </tr>
+        <tr>
+        <td>Lead qualification rate</td>
+        <td>15%</td>
+        <td>40%</td>
+        <td>167% improvement</td>
+        </tr>
+        <tr>
+        <td>Customer satisfaction</td>
+        <td>3.2/5</td>
+        <td>4.5/5</td>
+        <td>41% improvement</td>
+        </tr>
+        </tbody>
+        </table>
+        <hr />
+        <h2 id="stakeholder-analysis">2. Stakeholder Analysis</h2>
+        <h3 id="stakeholder-matrix">2.1 Stakeholder Matrix</h3>
+        <table>
+        <colgroup>
+        <col style="width: 21%" />
+        <col style="width: 9%" />
+        <col style="width: 16%" />
+        <col style="width: 18%" />
+        <col style="width: 34%" />
+        </colgroup>
+        <thead>
+        <tr>
+        <th>Stakeholder</th>
+        <th>Role</th>
+        <th>Interest</th>
+        <th>Influence</th>
+        <th>Engagement Strategy</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td><strong>Chief Lending Officer</strong></td>
+        <td>Executive Sponsor</td>
+        <td>ROI, compliance</td>
+        <td>High</td>
+        <td>Weekly steering meetings</td>
+        </tr>
+        <tr>
+        <td><strong>VP Operations</strong></td>
+        <td>Business Owner</td>
+        <td>Efficiency, cost savings</td>
+        <td>High</td>
+        <td>Bi-weekly reviews</td>
+        </tr>
+        <tr>
+        <td><strong>Compliance Officer</strong></td>
+        <td>Regulator</td>
+        <td>TILA, RESPA, state laws</td>
+        <td>High</td>
+        <td>Compliance sign-off on all features</td>
+        </tr>
+        <tr>
+        <td><strong>Licensed Loan Officers</strong></td>
+        <td>End Users</td>
+        <td>Lead quality, warm transfers</td>
+        <td>Medium</td>
+        <td>Training, feedback loops</td>
+        </tr>
+        <tr>
+        <td><strong>IT Security</strong></td>
+        <td>Technical</td>
+        <td>Data protection, PCI</td>
+        <td>Medium</td>
+        <td>Security reviews</td>
+        </tr>
+        <tr>
+        <td><strong>Borrowers</strong></td>
+        <td>Customers</td>
+        <td>Fast, accurate service</td>
+        <td>Low</td>
+        <td>User testing, surveys</td>
+        </tr>
+        <tr>
+        <td><strong>Call Center Staff</strong></td>
+        <td>Affected Users</td>
+        <td>Job impact</td>
+        <td>Low</td>
+        <td>Change management</td>
+        </tr>
+        </tbody>
+        </table>
+        <h3 id="raci-matrix">2.2 RACI Matrix</h3>
+        <table>
+        <thead>
+        <tr>
+        <th>Activity</th>
+        <th>CLO</th>
+        <th>VP Ops</th>
+        <th>Compliance</th>
+        <th>LOs</th>
+        <th>IT</th>
+        <th>Dev Team</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>Define business rules</td>
+        <td>A</td>
+        <td>R</td>
+        <td>C</td>
+        <td>C</td>
+        <td>I</td>
+        <td>I</td>
+        </tr>
+        <tr>
+        <td>Approve rate logic</td>
+        <td>A</td>
+        <td>C</td>
+        <td>R</td>
+        <td>I</td>
+        <td>I</td>
+        <td>I</td>
+        </tr>
+        <tr>
+        <td>Define compliance rules</td>
+        <td>C</td>
+        <td>I</td>
+        <td>A/R</td>
+        <td>I</td>
+        <td>I</td>
+        <td>I</td>
+        </tr>
+        <tr>
+        <td>Technical architecture</td>
+        <td>I</td>
+        <td>I</td>
+        <td>C</td>
+        <td>I</td>
+        <td>A</td>
+        <td>R</td>
+        </tr>
+        <tr>
+        <td>Security design</td>
+        <td>I</td>
+        <td>I</td>
+        <td>C</td>
+        <td>I</td>
+        <td>A/R</td>
+        <td>C</td>
+        </tr>
+        <tr>
+        <td>User acceptance testing</td>
+        <td>A</td>
+        <td>R</td>
+        <td>C</td>
+        <td>R</td>
+        <td>C</td>
+        <td>I</td>
+        </tr>
+        <tr>
+        <td>Go-live decision</td>
+        <td>A</td>
+        <td>R</td>
+        <td>R</td>
+        <td>I</td>
+        <td>R</td>
+        <td>I</td>
+        </tr>
+        </tbody>
+        </table>
+        <p><strong>Legend:</strong> R=Responsible, A=Accountable,
+        C=Consulted, I=Informed</p>
+        <hr />
+        <h2 id="business-requirements">3. Business Requirements</h2>
+        <h3 id="origination-requirements">3.1 Origination
+        Requirements</h3>
+        <table>
+        <colgroup>
+        <col style="width: 10%" />
+        <col style="width: 34%" />
+        <col style="width: 26%" />
+        <col style="width: 28%" />
+        </colgroup>
+        <thead>
+        <tr>
+        <th>ID</th>
+        <th>Requirement</th>
+        <th>Priority</th>
+        <th>Rationale</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>BR-O-001</td>
+        <td>System shall provide 24/7 voice-based mortgage inquiry
+        handling</td>
+        <td>Must</td>
+        <td>Capture after-hours leads (40% of calls)</td>
+        </tr>
+        <tr>
+        <td>BR-O-002</td>
+        <td>System shall screen HELOC eligibility by state</td>
+        <td>Must</td>
+        <td>Avoid regulatory violations</td>
+        </tr>
+        <tr>
+        <td>BR-O-003</td>
+        <td>System shall provide rate estimates with disclaimers</td>
+        <td>Must</td>
+        <td>TILA compliance</td>
+        </tr>
+        <tr>
+        <td>BR-O-004</td>
+        <td>System shall calculate equity and borrowing power</td>
+        <td>Should</td>
+        <td>Qualify leads accurately</td>
+        </tr>
+        <tr>
+        <td>BR-O-005</td>
+        <td>System shall compare product options</td>
+        <td>Should</td>
+        <td>Increase conversion</td>
+        </tr>
+        <tr>
+        <td>BR-O-006</td>
+        <td>System shall register qualified leads</td>
+        <td>Must</td>
+        <td>Pipeline management</td>
+        </tr>
+        <tr>
+        <td>BR-O-007</td>
+        <td>System shall transfer to loan officers</td>
+        <td>Must</td>
+        <td>Human escalation</td>
+        </tr>
+        </tbody>
+        </table>
+        <h3 id="servicing-requirements">3.2 Servicing Requirements</h3>
+        <table>
+        <colgroup>
+        <col style="width: 10%" />
+        <col style="width: 34%" />
+        <col style="width: 26%" />
+        <col style="width: 28%" />
+        </colgroup>
+        <thead>
+        <tr>
+        <th>ID</th>
+        <th>Requirement</th>
+        <th>Priority</th>
+        <th>Rationale</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>BR-S-001</td>
+        <td>System shall verify customer identity (2 levels)</td>
+        <td>Must</td>
+        <td>Security, privacy</td>
+        </tr>
+        <tr>
+        <td>BR-S-002</td>
+        <td>System shall provide loan balance information</td>
+        <td>Must</td>
+        <td>Core servicing</td>
+        </tr>
+        <tr>
+        <td>BR-S-003</td>
+        <td>System shall provide payment history</td>
+        <td>Should</td>
+        <td>Customer self-service</td>
+        </tr>
+        <tr>
+        <td>BR-S-004</td>
+        <td>System shall process one-time payments</td>
+        <td>Must</td>
+        <td>Revenue collection</td>
+        </tr>
+        <tr>
+        <td>BR-S-005</td>
+        <td>System shall manage autopay enrollment</td>
+        <td>Should</td>
+        <td>Payment reliability</td>
+        </tr>
+        <tr>
+        <td>BR-S-006</td>
+        <td>System shall allow payment date changes</td>
+        <td>Should</td>
+        <td>Customer flexibility</td>
+        </tr>
+        <tr>
+        <td>BR-S-007</td>
+        <td>System shall never accept card numbers by voice</td>
+        <td>Must</td>
+        <td>PCI-DSS compliance</td>
+        </tr>
+        </tbody>
+        </table>
+        <h3 id="compliance-requirements">3.3 Compliance
+        Requirements</h3>
+        <table>
+        <colgroup>
+        <col style="width: 10%" />
+        <col style="width: 34%" />
+        <col style="width: 26%" />
+        <col style="width: 28%" />
+        </colgroup>
+        <thead>
+        <tr>
+        <th>ID</th>
+        <th>Requirement</th>
+        <th>Priority</th>
+        <th>Rationale</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>BR-C-001</td>
+        <td>System shall enforce state-specific lending rules</td>
+        <td>Must</td>
+        <td>Regulatory compliance</td>
+        </tr>
+        <tr>
+        <td>BR-C-002</td>
+        <td>System shall fail closed on unknown states</td>
+        <td>Must</td>
+        <td>Risk mitigation</td>
+        </tr>
+        <tr>
+        <td>BR-C-003</td>
+        <td>System shall provide rate disclaimers</td>
+        <td>Must</td>
+        <td>TILA compliance</td>
+        </tr>
+        <tr>
+        <td>BR-C-004</td>
+        <td>System shall never approve loans or lock rates</td>
+        <td>Must</td>
+        <td>Licensing requirements</td>
+        </tr>
+        <tr>
+        <td>BR-C-005</td>
+        <td>System shall redact PII from logs</td>
+        <td>Must</td>
+        <td>Privacy (CCPA, GLBA)</td>
+        </tr>
+        <tr>
+        <td>BR-C-006</td>
+        <td>System shall require explicit payment authorization</td>
+        <td>Must</td>
+        <td>Consumer protection</td>
+        </tr>
+        </tbody>
+        </table>
+        <hr />
+        <h2 id="success-criteria">4. Success Criteria</h2>
+        <h3 id="key-performance-indicators-kpis">4.1 Key Performance
+        Indicators (KPIs)</h3>
+        <table>
+        <colgroup>
+        <col style="width: 13%" />
+        <col style="width: 27%" />
+        <col style="width: 22%" />
+        <col style="width: 36%" />
+        </colgroup>
+        <thead>
+        <tr>
+        <th>KPI</th>
+        <th>Baseline</th>
+        <th>Target</th>
+        <th>Measurement</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td><strong>Call Containment Rate</strong></td>
+        <td>N/A</td>
+        <td>70%</td>
+        <td>% calls resolved without human</td>
+        </tr>
+        <tr>
+        <td><strong>Lead Qualification Accuracy</strong></td>
+        <td>N/A</td>
+        <td>95%</td>
+        <td>% leads correctly qualified</td>
+        </tr>
+        <tr>
+        <td><strong>Compliance Accuracy</strong></td>
+        <td>N/A</td>
+        <td>100%</td>
+        <td>Zero violations in audit</td>
+        </tr>
+        <tr>
+        <td><strong>Customer Satisfaction</strong></td>
+        <td>N/A</td>
+        <td>4.5/5</td>
+        <td>Post-call surveys</td>
+        </tr>
+        <tr>
+        <td><strong>Average Handle Time</strong></td>
+        <td>N/A</td>
+        <td>&lt; 3 min</td>
+        <td>Call duration analytics</td>
+        </tr>
+        <tr>
+        <td><strong>Transfer Rate to LO</strong></td>
+        <td>N/A</td>
+        <td>30%</td>
+        <td>% qualified leads transferred</td>
+        </tr>
+        </tbody>
+        </table>
+        <h3 id="acceptance-criteria">4.2 Acceptance Criteria</h3>
+        <p>The system is accepted when:</p>
+        <ol type="1">
+        <li>All “Must” requirements pass acceptance testing</li>
+        <li>100% compliance with state lending rules in test
+        scenarios</li>
+        <li>Zero PII exposure in audit log review</li>
+        <li>95%+ speech recognition accuracy in test calls</li>
+        <li>&lt; 1 second voice response latency</li>
+        </ol>
+        <hr />
+        <h2 id="constraints-and-assumptions">5. Constraints and
+        Assumptions</h2>
+        <h3 id="constraints">5.1 Constraints</h3>
+        <table>
+        <colgroup>
+        <col style="width: 37%" />
+        <col style="width: 25%" />
+        <col style="width: 37%" />
+        </colgroup>
+        <thead>
+        <tr>
+        <th>Constraint</th>
+        <th>Impact</th>
+        <th>Mitigation</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>Cannot approve loans</td>
+        <td>Limits automation scope</td>
+        <td>Clear handoff to LO</td>
+        </tr>
+        <tr>
+        <td>Cannot process payments &gt; $50,000</td>
+        <td>Risk limit</td>
+        <td>Transfer for large payments</td>
+        </tr>
+        <tr>
+        <td>State licensing varies</td>
+        <td>Geographic limitations</td>
+        <td>Per-state rule engine</td>
+        </tr>
+        <tr>
+        <td>PCI compliance</td>
+        <td>Card handling restrictions</td>
+        <td>Keypad-only card entry</td>
+        </tr>
+        </tbody>
+        </table>
+        <h3 id="assumptions">5.2 Assumptions</h3>
+        <ol type="1">
+        <li>Gemini Live API maintains &lt; 500ms latency</li>
+        <li>Borrowers have stable internet for WebRTC</li>
+        <li>Loan officers available during business hours for
+        transfers</li>
+        <li>Rate sheet updated daily by pricing team</li>
+        </ol>
+        <hr />
+        <h2 id="risk-assessment">6. Risk Assessment</h2>
+        <table style="width:99%;">
+        <colgroup>
+        <col style="width: 15%" />
+        <col style="width: 31%" />
+        <col style="width: 21%" />
+        <col style="width: 31%" />
+        </colgroup>
+        <thead>
+        <tr>
+        <th>Risk</th>
+        <th>Likelihood</th>
+        <th>Impact</th>
+        <th>Mitigation</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>AI provides incorrect rate</td>
+        <td>Medium</td>
+        <td>High</td>
+        <td>Tool-based facts only, disclaimers</td>
+        </tr>
+        <tr>
+        <td>Caller impersonates borrower</td>
+        <td>Medium</td>
+        <td>High</td>
+        <td>Two-level verification</td>
+        </tr>
+        <tr>
+        <td>Compliance rule missed</td>
+        <td>Low</td>
+        <td>Critical</td>
+        <td>Fail-closed design, 242 tests</td>
+        </tr>
+        <tr>
+        <td>System unavailable</td>
+        <td>Low</td>
+        <td>Medium</td>
+        <td>Cloud Run auto-scaling</td>
+        </tr>
+        <tr>
+        <td>Caller abuses AI</td>
+        <td>Medium</td>
+        <td>Low</td>
+        <td>Conversation guardrails</td>
+        </tr>
+        </tbody>
+        </table>
+        <hr />
+        <h2 id="roi-analysis">7. ROI Analysis</h2>
+        <h3 id="cost-savings">7.1 Cost Savings</h3>
+        <table>
+        <thead>
+        <tr>
+        <th>Item</th>
+        <th>Annual Savings</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>Reduced call center staff (3 FTE)</td>
+        <td>$180,000</td>
+        </tr>
+        <tr>
+        <td>After-hours lead capture</td>
+        <td>$240,000</td>
+        </tr>
+        <tr>
+        <td>Faster lead qualification</td>
+        <td>$120,000</td>
+        </tr>
+        <tr>
+        <td><strong>Total Annual Savings</strong></td>
+        <td><strong>$540,000</strong></td>
+        </tr>
+        </tbody>
+        </table>
+        <h3 id="investment">7.2 Investment</h3>
+        <table>
+        <thead>
+        <tr>
+        <th>Item</th>
+        <th>Cost</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>Development (Phase 1)</td>
+        <td>$150,000</td>
+        </tr>
+        <tr>
+        <td>Cloud infrastructure (annual)</td>
+        <td>$24,000</td>
+        </tr>
+        <tr>
+        <td>Gemini API usage (annual)</td>
+        <td>$36,000</td>
+        </tr>
+        <tr>
+        <td><strong>Total Year 1 Cost</strong></td>
+        <td><strong>$210,000</strong></td>
+        </tr>
+        </tbody>
+        </table>
+        <h3 id="roi-summary">7.3 ROI Summary</h3>
+        <ul>
+        <li><strong>Payback Period:</strong> 5 months</li>
+        <li><strong>Year 1 ROI:</strong> 157%</li>
+        <li><strong>5-Year NPV:</strong> $1.8M (10% discount rate)</li>
+        </ul>
+        <hr />
+        <h2 id="approvals">8. Approvals</h2>
+        <table>
+        <thead>
+        <tr>
+        <th>Role</th>
+        <th>Name</th>
+        <th>Signature</th>
+        <th>Date</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>Executive Sponsor</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        </tr>
+        <tr>
+        <td>Business Owner</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        </tr>
+        <tr>
+        <td>Compliance Officer</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        </tr>
+        <tr>
+        <td>Technical Lead</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        </tr>
+        </tbody>
+        </table>
+        <hr />
+        <p><em>Document Control: This document requires re-approval if
+        business requirements change.</em></p>
+    </div>
+
+    <div class="footer">
+        <p>HomeFirst AI Mortgage Advisor &copy; 2026 | Confidential</p>
+        <p>Generated from project documentation</p>
+    </div>
+</body>
+</html>
