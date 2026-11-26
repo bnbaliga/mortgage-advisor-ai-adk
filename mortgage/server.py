@@ -34,8 +34,12 @@ from mortgage import events, tools
 from mortgage.agent import LIVE_MODEL, VOICE, root_agent
 from mortgage.persona import AGENT_NAME
 from mortgage.usage import COMPRESSION_TRIGGER, Usage, server_totals
+from mortgage.observability import init_langfuse, trace_session, get_langfuse
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
+# Initialize Langfuse observability (if configured)
+init_langfuse()
 log = logging.getLogger("mortgage")
 
 # Application metadata
@@ -208,6 +212,12 @@ async def ws(websocket: WebSocket):
     _metrics["calls_active"] += 1
     log.info("call %s connected (model=%s, voice=%s)", call_id[:8], LIVE_MODEL, VOICE)
 
+    # Create Langfuse trace for this session
+    lf_trace = trace_session(
+        session_id=call_id,
+        metadata={"model": LIVE_MODEL, "voice": VOICE, "environment": ENVIRONMENT}
+    )
+
     async def send(obj: dict):
         await websocket.send_text(json.dumps(obj, default=str))
 
@@ -326,6 +336,26 @@ async def ws(websocket: WebSocket):
             f", est. ${cost:.4f}" if cost is not None else "",
             usage.by,
         )
+
+        # Update Langfuse trace with final usage data
+        if lf_trace:
+            try:
+                lf_trace.update(
+                    metadata={
+                        "tokens_total": usage.total,
+                        "tokens_input": usage.input,
+                        "tokens_output": usage.output,
+                        "cost_usd": cost,
+                        "turns": usage.reports,
+                        "errored": call_errored,
+                    }
+                )
+                # Flush is handled by atexit, but we can force it
+                langfuse = get_langfuse()
+                if langfuse:
+                    langfuse.flush()
+            except Exception as e:
+                log.debug("Failed to update Langfuse trace: %s", e)
 
 
 if FRONTEND.exists():
