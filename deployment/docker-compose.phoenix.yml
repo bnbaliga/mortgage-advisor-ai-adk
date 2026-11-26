@@ -1,0 +1,37 @@
+# Arize Phoenix - Local LLM Observability
+#
+# Phoenix is free, unlimited, and runs entirely locally.
+# Great for development and debugging.
+#
+# Usage:
+#   docker-compose -f deployment/docker-compose.phoenix.yml up -d
+#
+# Access:
+#   - Phoenix Dashboard: http://localhost:6006
+#
+# Configure your app:
+#   OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:6006/v1/traces
+
+version: "3.8"
+
+services:
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    container_name: phoenix
+    restart: unless-stopped
+    ports:
+      - "6006:6006"      # Web UI
+      - "4317:4317"      # OTLP gRPC
+      - "4318:4318"      # OTLP HTTP
+    environment:
+      - PHOENIX_WORKING_DIR=/data
+    volumes:
+      - phoenix-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6006/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  phoenix-data:
