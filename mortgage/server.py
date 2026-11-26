@@ -34,7 +34,7 @@ from mortgage import events, tools
 from mortgage.agent import LIVE_MODEL, VOICE, root_agent
 from mortgage.persona import AGENT_NAME
 from mortgage.usage import COMPRESSION_TRIGGER, Usage, server_totals
-from mortgage.observability import init_langfuse, trace_session, get_langfuse
+from mortgage.observability import init_langfuse, trace_session, get_langfuse, record_usage, finalize_session
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -188,13 +188,34 @@ async def usage_totals():
     return server_totals.snapshot()
 
 
-def _friendly(exc: BaseException) -> str:
-    s = f"{type(exc).__name__}: {exc}"
-    if "API key" in s or "API_KEY" in s or "401" in s or "403" in s:
-        return "The Gemini API key was rejected — check GOOGLE_API_KEY in .env (AI Studio key, not Vertex)."
-    if "404" in s and "model" in s.lower():
-        return f"The live model '{LIVE_MODEL}' wasn't found — check LIVE_MODEL in .env."
-    return s
+def _friendly(exc: BaseException) -> tuple[str, str]:
+    """Return (friendly_message, technical_details) for an exception."""
+    full_error = f"{type(exc).__name__}: {exc}"
+
+    # Import traceback for detailed error info
+    import traceback
+    stack_trace = traceback.format_exc()
+
+    if "API key" in full_error or "API_KEY" in full_error or "401" in full_error or "403" in full_error:
+        return (
+            "The Gemini API key was rejected — check GOOGLE_API_KEY in .env (AI Studio key, not Vertex).",
+            stack_trace
+        )
+    if "404" in full_error and "model" in full_error.lower():
+        return (
+            f"The live model '{LIVE_MODEL}' wasn't found — check LIVE_MODEL in .env.",
+            stack_trace
+        )
+    if "KeyError" in full_error:
+        return (
+            "An internal error occurred while processing your request. Our team has been notified.",
+            f"Missing key in data structure:\n{full_error}\n\n{stack_trace}"
+        )
+
+    return (
+        "An unexpected error occurred during the call.",
+        f"{full_error}\n\n{stack_trace}"
+    )
 
 
 @app.websocket("/ws")
@@ -283,6 +304,17 @@ async def ws(websocket: WebSocket):
             if um:
                 usage.add(um)
                 await send({"type": "usage", **usage.snapshot()})
+                # Record usage to Langfuse on each turn
+                if lf_trace:
+                    record_usage(
+                        trace=lf_trace,
+                        model=LIVE_MODEL,
+                        input_tokens=usage.input,
+                        output_tokens=usage.output,
+                        turn_number=usage.reports,
+                        cost_usd=usage.cost_usd(),
+                        by_modality=usage.by,
+                    )
 
     async def feed():
         while True:
@@ -305,7 +337,8 @@ async def ws(websocket: WebSocket):
                 call_errored = True
                 log.error("call %s: %s failed: %r", call_id[:8], t.get_name(), exc)
                 try:
-                    await send({"type": "error", "message": _friendly(exc)})
+                    friendly_msg, details = _friendly(exc)
+                    await send({"type": "error", "message": friendly_msg, "details": details})
                 except Exception:
                     pass
         for t in pending:
@@ -337,25 +370,26 @@ async def ws(websocket: WebSocket):
             usage.by,
         )
 
-        # Update Langfuse trace with final usage data
+        # Finalize Langfuse trace with usage data and scores
         if lf_trace:
             try:
-                lf_trace.update(
-                    metadata={
-                        "tokens_total": usage.total,
-                        "tokens_input": usage.input,
-                        "tokens_output": usage.output,
-                        "cost_usd": cost,
-                        "turns": usage.reports,
-                        "errored": call_errored,
-                    }
+                finalize_session(
+                    trace=lf_trace,
+                    model=LIVE_MODEL,
+                    total_tokens=usage.total,
+                    input_tokens=usage.input,
+                    output_tokens=usage.output,
+                    cost_usd=cost,
+                    turns=usage.reports,
+                    errored=call_errored,
+                    by_modality=usage.by,
                 )
                 # Flush is handled by atexit, but we can force it
                 langfuse = get_langfuse()
                 if langfuse:
                     langfuse.flush()
             except Exception as e:
-                log.debug("Failed to update Langfuse trace: %s", e)
+                log.debug("Failed to finalize Langfuse trace: %s", e)
 
 
 if FRONTEND.exists():

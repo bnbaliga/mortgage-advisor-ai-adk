@@ -953,6 +953,200 @@
     <div id="orb" class="orb idle"></div>
   </div>
 
-  <script src="/main.js?v=3"></script>
+  <!-- Error Modal -->
+  <div id="error-modal" class="error-modal" style="display: none;">
+    <div class="error-modal-backdrop"></div>
+    <div class="error-modal-content">
+      <div class="error-modal-icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+      </div>
+      <h3 class="error-modal-title">Call Ended Unexpectedly</h3>
+      <p id="error-modal-message" class="error-modal-message">An error occurred during the call.</p>
+      <div id="error-modal-details" class="error-modal-details" style="display: none;">
+        <button class="error-details-toggle" onclick="toggleErrorDetails()">
+          <span>Show technical details</span>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+        <pre id="error-modal-stack" class="error-modal-stack"></pre>
+      </div>
+      <div class="error-modal-actions">
+        <button class="error-modal-btn secondary" onclick="closeErrorModal()">Close</button>
+        <button class="error-modal-btn primary" onclick="retryCall()">Try Again</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* Error Modal Styles */
+    .error-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .error-modal-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+
+    .error-modal-content {
+      position: relative;
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      animation: modal-appear 0.3s ease-out;
+    }
+
+    @keyframes modal-appear {
+      from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .error-modal-icon {
+      width: 56px;
+      height: 56px;
+      background: #fef2f2;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .error-modal-icon svg {
+      width: 28px;
+      height: 28px;
+      color: var(--danger);
+    }
+
+    .error-modal-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--gray-900);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .error-modal-message {
+      font-size: 14px;
+      color: var(--gray-600);
+      text-align: center;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .error-modal-details {
+      margin-bottom: 20px;
+    }
+
+    .error-details-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 8px;
+      background: none;
+      border: none;
+      color: var(--gray-500);
+      font-size: 13px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .error-details-toggle:hover {
+      color: var(--gray-700);
+    }
+
+    .error-details-toggle svg {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.2s;
+    }
+
+    .error-details-toggle.expanded svg {
+      transform: rotate(180deg);
+    }
+
+    .error-modal-stack {
+      display: none;
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--gray-700);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .error-modal-stack.visible {
+      display: block;
+    }
+
+    .error-modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .error-modal-btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .error-modal-btn.primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .error-modal-btn.primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .error-modal-btn.secondary {
+      background: var(--gray-100);
+      color: var(--gray-700);
+    }
+
+    .error-modal-btn.secondary:hover {
+      background: var(--gray-200);
+    }
+  </style>
+
+  <script src="/main.js?v=4"></script>
 </body>
 </html>

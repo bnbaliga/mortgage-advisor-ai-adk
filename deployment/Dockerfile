@@ -3,12 +3,13 @@ FROM python:3.11-slim
 
 COPY --from=ghcr.io/astral-sh/uv:0.8 /uv /uvx /bin/
 
+# OTEL_SDK_DISABLED defaults to true in code if not set
+# Set OTEL_SDK_DISABLED=false and LANGFUSE_* vars at deploy time to enable observability
 ENV PYTHONUNBUFFERED=1 \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PROJECT_ENVIRONMENT=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
-    OTEL_SDK_DISABLED=true \
     GOOGLE_GENAI_USE_VERTEXAI=FALSE
 
 WORKDIR /app

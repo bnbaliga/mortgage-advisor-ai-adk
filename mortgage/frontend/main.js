@@ -37,6 +37,12 @@ const usageContext = $("usage-context");
 const usageContextLimit = $("usage-context-limit");
 const usageContextBar = $("usage-context-bar");
 
+// Error Modal Elements
+const errorModal = $("error-modal");
+const errorModalMessage = $("error-modal-message");
+const errorModalDetails = $("error-modal-details");
+const errorModalStack = $("error-modal-stack");
+
 // State
 const BARGE_RMS = 0.02;
 let ws, audioCtx, workletNode, micStream;
@@ -48,6 +54,8 @@ let durationInterval = null;
 let isConnected = false;
 let currentAgent = "triage";
 let verificationLevel = "none";
+let lastError = null;
+let callEndedNormally = false;
 
 // --- UI Updates ---
 
@@ -250,6 +258,66 @@ function clearTranscript() {
   transcriptBody.innerHTML = '<div class="transcript-empty">Conversation will appear here...</div>';
 }
 
+// --- Error Modal Functions ---
+
+function showErrorModal(message, details = null) {
+  errorModalMessage.textContent = message;
+
+  if (details) {
+    errorModalDetails.style.display = "block";
+    errorModalStack.textContent = details;
+  } else {
+    errorModalDetails.style.display = "none";
+  }
+
+  errorModal.style.display = "flex";
+  lastError = { message, details };
+}
+
+function closeErrorModal() {
+  errorModal.style.display = "none";
+  lastError = null;
+
+  // Reset toggle state
+  const toggle = errorModalDetails.querySelector(".error-details-toggle");
+  if (toggle) {
+    toggle.classList.remove("expanded");
+  }
+  errorModalStack.classList.remove("visible");
+}
+
+function toggleErrorDetails() {
+  const toggle = errorModalDetails.querySelector(".error-details-toggle");
+  const isExpanded = toggle.classList.toggle("expanded");
+
+  if (isExpanded) {
+    errorModalStack.classList.add("visible");
+    toggle.querySelector("span").textContent = "Hide technical details";
+  } else {
+    errorModalStack.classList.remove("visible");
+    toggle.querySelector("span").textContent = "Show technical details";
+  }
+}
+
+function retryCall() {
+  closeErrorModal();
+  startCall();
+}
+
+// Close modal when clicking backdrop
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("error-modal-backdrop")) {
+    closeErrorModal();
+  }
+});
+
+// Close modal with Escape key
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && errorModal.style.display === "flex") {
+    closeErrorModal();
+  }
+});
+
 
 // --- Voice Playback (24k PCM from server) ---
 
@@ -303,6 +371,8 @@ function connect() {
   const proto = location.protocol === "https:" ? "wss" : "ws";
   ws = new WebSocket(`${proto}://${location.host}/ws`);
   ws.binaryType = "arraybuffer";
+  callEndedNormally = false;
+  lastError = null;
 
   ws.onopen = () => {
     isConnected = true;
@@ -312,9 +382,9 @@ function connect() {
     startDurationTimer();
   };
 
-  ws.onclose = () => {
+  ws.onclose = (event) => {
+    const wasConnected = isConnected;
     isConnected = false;
-    setStatus("Call ended");
     setOrbState("idle");
     showSession(false);
     stopDurationTimer();
@@ -324,11 +394,31 @@ function connect() {
     updateAgent("triage");
     updateVerification("none");
     clearTranscript();
+
+    // Show error modal if call ended unexpectedly (not user-initiated and was connected)
+    if (wasConnected && !callEndedNormally && lastError) {
+      showErrorModal(
+        lastError.message || "The call ended unexpectedly.",
+        lastError.details
+      );
+    } else if (wasConnected && !callEndedNormally && event.code !== 1000) {
+      // WebSocket closed abnormally (code 1000 is normal closure)
+      showErrorModal(
+        "The connection was lost unexpectedly. This may be due to a network issue or server error.",
+        `WebSocket closed with code: ${event.code}\nReason: ${event.reason || "Unknown"}`
+      );
+    } else {
+      setStatus("Call ended");
+    }
   };
 
   ws.onerror = (err) => {
     console.error("WebSocket error:", err);
     setStatus("Connection error");
+    lastError = {
+      message: "Failed to connect to the voice server.",
+      details: "WebSocket connection error. Please check your network connection and try again."
+    };
   };
 
   ws.onmessage = (evt) => {
@@ -355,8 +445,13 @@ function connect() {
     } else if (m.type === "usage") {
       updateUsage(m);
     } else if (m.type === "error") {
+      // Store error for display when connection closes
+      lastError = {
+        message: m.message,
+        details: m.details || null
+      };
       setStatus("Error: " + m.message);
-      console.error(m.message);
+      console.error("Server error:", m.message, m.details);
     }
   };
 }
@@ -413,6 +508,9 @@ async function startCall() {
 
 function endCall() {
   console.log("Ending call...");
+
+  // Mark as intentionally ended by user
+  callEndedNormally = true;
 
   // Close WebSocket first
   if (ws) {

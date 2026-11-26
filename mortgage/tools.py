@@ -209,14 +209,24 @@ async def get_rate_estimate(
     """
     try:
         estimate = store.get_rate_estimate(product_type, credit_score, loan_to_value)
-        return {
+        result = {
             "result": "ok",
             "product": estimate["product"],
             "estimated_rate": format_rate(estimate["estimated_rate"]),
-            "range": estimate["rate_range"],
             "disclaimer": estimate["disclaimer"],
             "say": "Give them the estimated rate and mention this is an estimate that depends on full application review.",
         }
+        # Add optional fields if present (rate sheet vs fallback returns different data)
+        if "rate_range" in estimate:
+            result["range"] = estimate["rate_range"]
+        if "credit_tier" in estimate:
+            result["credit_tier"] = estimate["credit_tier"]
+        if "ltv_band" in estimate:
+            result["ltv_band"] = estimate["ltv_band"]
+        if "market_benchmark" in estimate:
+            result["market_benchmark"] = format_rate(estimate["market_benchmark"])
+            result["benchmark_source"] = estimate.get("benchmark_source")
+        return result
     except MortgageError as e:
         return _err(e)
 

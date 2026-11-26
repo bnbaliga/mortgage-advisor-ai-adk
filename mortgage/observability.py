@@ -343,12 +343,66 @@ def trace_generation(
         log.warning("Failed to record generation: %s", e)
 
 
+def record_usage(
+    trace: Optional[SessionTrace],
+    model: str,
+    input_tokens: int,
+    output_tokens: int,
+    turn_number: int = 1,
+    cost_usd: Optional[float] = None,
+    by_modality: Optional[dict] = None,
+):
+    """Record token usage as a generation observation.
+
+    This creates a generation observation that Langfuse can use to calculate
+    costs and display in the Model Usage dashboard.
+
+    Args:
+        trace: SessionTrace object
+        model: Model name (e.g., "gemini-2.0-flash-live-001")
+        input_tokens: Number of input tokens
+        output_tokens: Number of output tokens
+        turn_number: Turn number for naming
+        cost_usd: Pre-calculated cost in USD
+        by_modality: Token breakdown by modality (audio, text)
+    """
+    if not trace or not _langfuse_client:
+        return
+
+    try:
+        # Langfuse expects usage in this format for cost calculation
+        usage_data = {
+            "input": input_tokens,
+            "output": output_tokens,
+            "total": input_tokens + output_tokens,
+            "unit": "TOKENS",
+        }
+
+        metadata = {"turn": turn_number}
+        if by_modality:
+            metadata["by_modality"] = by_modality
+        if cost_usd is not None:
+            metadata["cost_usd_calculated"] = cost_usd
+
+        # Create generation observation with usage data
+        _langfuse_client.generation(
+            trace_id=trace.trace_id,
+            name=f"turn_{turn_number}",
+            model=model,
+            usage=usage_data,
+            metadata=metadata,
+        )
+        log.debug("Recorded usage for turn %d: %d in / %d out", turn_number, input_tokens, output_tokens)
+    except Exception as e:
+        log.warning("Failed to record usage: %s", e)
+
+
 def score_session(trace: Optional[SessionTrace], name: str, value: float, comment: Optional[str] = None):
     """Add a score to the session (e.g., user satisfaction, task completion).
 
     Args:
         trace: SessionTrace object
-        name: Score name (e.g., "user_satisfaction", "task_completed")
+        name: Score name (e.g., "call_completion", "verification_success")
         value: Score value (0.0 to 1.0)
         comment: Optional comment
     """
@@ -356,18 +410,100 @@ def score_session(trace: Optional[SessionTrace], name: str, value: float, commen
         return
 
     try:
-        # Create a score event
-        _langfuse_client.create_event(
-            trace_context=trace.get_trace_context(),
-            name=f"score:{name}",
-            metadata={
-                "score_name": name,
-                "score_value": value,
-                "comment": comment,
-            },
+        # Use Langfuse's proper score API
+        _langfuse_client.score(
+            trace_id=trace.trace_id,
+            name=name,
+            value=value,
+            comment=comment,
         )
+        log.debug("Recorded score %s: %.2f", name, value)
     except Exception as e:
         log.warning("Failed to add score: %s", e)
+
+
+def finalize_session(
+    trace: Optional[SessionTrace],
+    model: str,
+    total_tokens: int,
+    input_tokens: int,
+    output_tokens: int,
+    cost_usd: Optional[float] = None,
+    turns: int = 0,
+    errored: bool = False,
+    by_modality: Optional[dict] = None,
+):
+    """Finalize a session trace with summary metrics and scores.
+
+    Call this when the call ends to record final statistics.
+
+    Args:
+        trace: SessionTrace object
+        model: Model name used
+        total_tokens: Total tokens consumed
+        input_tokens: Input tokens consumed
+        output_tokens: Output tokens consumed
+        cost_usd: Total estimated cost
+        turns: Number of conversation turns
+        errored: Whether the call ended in error
+        by_modality: Token breakdown by modality
+    """
+    if not trace or not _langfuse_client:
+        return
+
+    try:
+        # Record final generation with cumulative usage
+        usage_data = {
+            "input": input_tokens,
+            "output": output_tokens,
+            "total": total_tokens,
+            "unit": "TOKENS",
+        }
+
+        metadata = {
+            "turns": turns,
+            "errored": errored,
+            "session_id": trace.session_id,
+        }
+        if by_modality:
+            metadata["by_modality"] = by_modality
+        if cost_usd is not None:
+            metadata["cost_usd"] = cost_usd
+
+        # Create a final summary generation observation
+        _langfuse_client.generation(
+            trace_id=trace.trace_id,
+            name="session_summary",
+            model=model,
+            usage=usage_data,
+            metadata=metadata,
+        )
+
+        # Add scores based on call outcome
+        # Score: call_completion (1.0 = completed normally, 0.0 = errored)
+        score_session(
+            trace,
+            name="call_completion",
+            value=0.0 if errored else 1.0,
+            comment="Call ended with error" if errored else "Call completed normally",
+        )
+
+        # Score: conversation_depth based on number of turns
+        # More turns indicate a more engaged conversation
+        depth_score = min(1.0, turns / 10.0)  # Cap at 10 turns = 1.0
+        score_session(
+            trace,
+            name="conversation_depth",
+            value=depth_score,
+            comment=f"{turns} conversation turns",
+        )
+
+        log.debug(
+            "Finalized session trace: %d tokens, %d turns, cost $%.4f",
+            total_tokens, turns, cost_usd or 0
+        )
+    except Exception as e:
+        log.warning("Failed to finalize session: %s", e)
 
 
 # PII fields to redact

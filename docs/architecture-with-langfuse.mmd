@@ -1,0 +1,95 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#2563eb', 'primaryTextColor': '#fff', 'primaryBorderColor': '#1d4ed8', 'lineColor': '#6b7280', 'secondaryColor': '#10b981', 'tertiaryColor': '#f3f4f6'}}}%%
+
+flowchart TB
+    subgraph Client["Browser Client"]
+        UI[Voice UI<br/>WebSocket Client]
+        MIC[Microphone<br/>16kHz PCM]
+        SPK[Speaker<br/>24kHz PCM]
+    end
+
+    subgraph Server["FastAPI Server"]
+        WS[WebSocket<br/>Handler]
+        EVENTS[Event<br/>Bus]
+    end
+
+    subgraph ADK["Google ADK"]
+        RUNNER[Runner<br/>run_live]
+        SESSION[Session<br/>Service]
+        LRQ[LiveRequest<br/>Queue]
+    end
+
+    subgraph Agents["Multi-Agent System"]
+        ROOT[Root Agent<br/>Mac]
+        TRIAGE[Triage Agent<br/>Sam]
+        ORIG[Origination<br/>Agent]
+        SERV[Servicing<br/>Agent]
+    end
+
+    subgraph Tools["Tool Layer"]
+        POLICY[Policy Door<br/>Tool Interceptor]
+        TOOLS[Business Tools<br/>Rates, Payments, etc.]
+        STORE[Mortgage Store<br/>Data Layer]
+    end
+
+    subgraph Observability["Observability Stack"]
+        OTEL[OpenTelemetry<br/>Traces]
+        LF[Langfuse<br/>LLM Analytics]
+        LF_DASH[Langfuse Dashboard<br/>us.cloud.langfuse.com]
+    end
+
+    subgraph External["External Services"]
+        GEMINI[Gemini Live API<br/>gemini-3.1-flash-live]
+        RATES[Rate Sheets<br/>Market Data]
+    end
+
+    %% Client connections
+    UI -->|Audio Stream| MIC
+    SPK -->|Audio Playback| UI
+    UI <-->|WebSocket| WS
+
+    %% Server to ADK
+    WS --> LRQ
+    WS --> EVENTS
+    LRQ --> RUNNER
+    RUNNER --> SESSION
+
+    %% ADK to Agents
+    RUNNER --> ROOT
+    ROOT --> TRIAGE
+    ROOT --> ORIG
+    ROOT --> SERV
+
+    %% Agents to Tools
+    TRIAGE --> POLICY
+    ORIG --> POLICY
+    SERV --> POLICY
+    POLICY --> TOOLS
+    TOOLS --> STORE
+    STORE --> RATES
+
+    %% ADK to Gemini
+    RUNNER <-->|Bidirectional<br/>Streaming| GEMINI
+
+    %% Observability
+    RUNNER -.->|OTel Spans| OTEL
+    TOOLS -.->|Tool Calls| OTEL
+    WS -.->|Session Traces| LF
+    OTEL -.->|Export| LF
+    LF -.->|View| LF_DASH
+
+    %% Styling
+    classDef client fill:#dbeafe,stroke:#2563eb,color:#1e40af
+    classDef server fill:#dcfce7,stroke:#10b981,color:#065f46
+    classDef adk fill:#fef3c7,stroke:#f59e0b,color:#92400e
+    classDef agent fill:#ede9fe,stroke:#8b5cf6,color:#5b21b6
+    classDef tool fill:#fce7f3,stroke:#ec4899,color:#9d174d
+    classDef obs fill:#e0f2fe,stroke:#0ea5e9,color:#0369a1
+    classDef external fill:#f3f4f6,stroke:#6b7280,color:#374151
+
+    class UI,MIC,SPK client
+    class WS,EVENTS server
+    class RUNNER,SESSION,LRQ adk
+    class ROOT,TRIAGE,ORIG,SERV agent
+    class POLICY,TOOLS,STORE tool
+    class OTEL,LF,LF_DASH obs
+    class GEMINI,RATES external
